@@ -1,2 +1,10 @@
-# minCykel-backend
-The backend for the minCykel.app 
+MinCykel Backend
+
+## 1. Install and running project
+
+To install the requirements run:
+
+```
+pip install -r requirements.txt
+```
+
