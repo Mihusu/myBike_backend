@@ -4,7 +4,10 @@ from typing import List
 
 from src.books.models import Book
 
-router = APIRouter()
+router = APIRouter(
+    tags=["books"], 
+    prefix="/books"
+)
 
 @router.post("/", response_description="Create a new book", status_code=status.HTTP_201_CREATED, response_model=Book)
 def create_book(request: Request, book: Book = Body(...)):

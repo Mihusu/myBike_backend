@@ -26,5 +26,5 @@ def shutdown_db_client():
     app.mongodb_client.close()
     
 
-app.include_router(book_router, tags=["books"], prefix="/books")
-app.include_router(bike_router, tags=["bikes"], prefix="/bikes")
+app.include_router(book_router)
+app.include_router(bike_router)

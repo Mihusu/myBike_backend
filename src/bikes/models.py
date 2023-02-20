@@ -4,40 +4,46 @@ import uuid
 from pydantic import BaseModel, Field
 
 class BikeGender(str, Enum):
-    MALE = 0,
-    FEMALE = 1,
-    UNI_SEX = 2
+    MALE = "male",
+    FEMALE = "female",
+    UNI_SEX = "uni_sex"
 
 
 class BikeKind(str, Enum):
-    CITY = 0,
-    MOUNTAIN = 1,
-    ROAD = 2,
-    RACE = 3,
-    CARGO = 4,
-    HYBRID = 5,
-    CRUISER = 6,
-    FOLDING = 7,
-    BMX = 8,
-    OTHER = 9
+    CITY = "city",
+    MOUNTAIN = "mountain",
+    ROAD = "road",
+    RACE = "race",
+    CARGO = "cargo",
+    HYBRID = "hybrid",
+    CRUISER = "cruiser",
+    FOLDING = "folding",
+    BMX = "bmx",
+    OTHER = "other"
 
 
 class BikeColor(str, Enum):
-    BLACK = 0,
-    WHITE = 1,
-    GRAY = 2,
-    RED = 3,
-    BLUE = 4,
-    GREEN = 5,
-    YELLOW = 6,
-    ORANGE = 7,
-    PURPLE = 8,
-    OTHER = 9
+    BLACK = "black",
+    WHITE = "white",
+    GRAY = "gray",
+    RED = "red",
+    BLUE = "blue",
+    GREEN = "green",
+    YELLOW = "yellow",
+    ORANGE = "orange",
+    PURPLE = "purple",
+    OTHER = "other"
+
+
+class BikeState(str, Enum):
+    UNCLAIMED = "unclaimed",
+    CLAIMED = "claimed",
+    REPORTED_STOLEN = "reported_stolen"
 
 
 class BikeOwner(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
-    phone_number: str = ""
+    phone_number: str = "" # TODO: Maybe hash this at some point to avoid possible leakage
     verified: bool = False
     created_at: datetime.datetime = datetime.datetime.now()
     
@@ -58,7 +64,7 @@ class Bike(BaseModel):
     claimed_date: datetime.datetime = datetime.datetime.now()
     stolen_date: datetime.datetime = datetime.datetime.now()
     created_at: datetime.datetime = datetime.datetime.now()
-    state: str = "" # Figure out how to handle states
+    state: BikeState | None = None # Figure out how to handle states
     
     class Config:  
         use_enum_values = False
