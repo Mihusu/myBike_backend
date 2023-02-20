@@ -1,10 +1,13 @@
 from dotenv import dotenv_values
 from pymongo import MongoClient
 from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
 import certifi
 
-from src.books.routers import router as book_router
 from src.bikes.routers import router as bike_router
+from src.auth.routers import router as auth_router
 
 app = FastAPI()
 
@@ -24,7 +27,7 @@ def startup_db_client():
 def shutdown_db_client():
     print("Closing database...")
     app.mongodb_client.close()
-    
 
-app.include_router(book_router)
+
 app.include_router(bike_router)
+app.include_router(auth_router)

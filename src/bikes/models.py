@@ -41,6 +41,11 @@ class BikeState(str, Enum):
     REPORTED_STOLEN = "reported_stolen"
 
 
+class BikeOwnerCredentials(BaseModel):
+    phone_number: str = ""
+    password: str = ""
+    
+    
 class BikeOwner(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
     phone_number: str = "" # TODO: Maybe hash this at some point to avoid possible leakage
@@ -51,7 +56,7 @@ class BikeOwner(BaseModel):
 class Bike(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
     frame_number: str = Field(...)
-    owner: BikeOwner
+    owner: BikeOwner | None
     gender: BikeGender | None = None
     is_electic: bool = False
     kind: BikeKind | None = None
@@ -65,8 +70,5 @@ class Bike(BaseModel):
     stolen_date: datetime.datetime = datetime.datetime.now()
     created_at: datetime.datetime = datetime.datetime.now()
     state: BikeState | None = None # Figure out how to handle states
-    
-    class Config:  
-        use_enum_values = False
     
     

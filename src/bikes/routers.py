@@ -14,14 +14,14 @@ example_owner = BikeOwner(
 )
 
 
-@router.get('/', response_model=list[Bike])
+@router.get('/')
 def get_bike_list(request: Request) -> list[Bike]:
     bikes = list(request.app.database["bikes"].find(limit=100))
     return bikes
 
 
-@router.get('/{id}', response_description="Get a single bike by id", status_code=status.HTTP_200_OK, response_model=Bike)
-def get_bike_by_id(id: str, request: Request):
+@router.get('/{id}', response_description="Get a single bike by id", status_code=status.HTTP_200_OK)
+def get_bike_by_id(id: str, request: Request) -> Bike:
     bike = request.app.database["bikes"].find_one({"_id": id})
     if bike is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
@@ -29,8 +29,8 @@ def get_bike_by_id(id: str, request: Request):
     return bike
 
 
-@router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED, response_model=Bike)
-def register_bike(request: Request, bike: Bike = Body(...)):
+@router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED)
+def register_bike(request: Request, bike: Bike = Body(...)) -> Bike:
     bike = jsonable_encoder(bike)
     new_bike = request.app.database["bikes"].insert_one(bike)
     created_bike = request.app.database["bikes"].find_one(
