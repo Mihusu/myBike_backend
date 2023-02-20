@@ -1,19 +1,14 @@
-from typing import Union
 from dotenv import dotenv_values
 from pymongo import MongoClient
 from fastapi import FastAPI
 import certifi
 
-from controllers.controller_book import router
+from src.books.routers import router as book_router
+from src.bikes.routers import router as bike_router
 
 app = FastAPI()
 
 config = dotenv_values(".env")
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
 
 @app.on_event("startup")
 def startup_db_client():
@@ -21,7 +16,7 @@ def startup_db_client():
     
     # For some reason, the database connection fails with SSL: CERTIFICATE_VERIFY_FAILED
     # when not using tlsCAFile=certifi.where(), so i am keeping it here for now until 
-    # a new solution is found
+    # a new solution is found.
     app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
     app.database = app.mongodb_client[config["DB_NAME"]]
 
@@ -31,4 +26,5 @@ def shutdown_db_client():
     app.mongodb_client.close()
     
 
-app.include_router(router, tags=["books"], prefix="/books")
+app.include_router(book_router, tags=["books"], prefix="/books")
+app.include_router(bike_router, tags=["bikes"], prefix="/bikes")
