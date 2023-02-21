@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ### 1.3 Running the server from terminal
 
 ```
-uvicorn main:app --reload
+uvicorn src.main:app --reload
 ```
 
 ## 2. Development
