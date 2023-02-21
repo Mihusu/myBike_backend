@@ -8,11 +8,11 @@ To have all the dependencies used in the project, create a virtual environment w
 
 Unix/macOs
 ```console
-python3 -m venv env
+python3 -m venv env  (Only first time setup)
 ```
 Windows
 ```
-python3 -m venv env
+py -m venv env  (Only first time setup)
 ```
 
 Then activate the virtual environment:
@@ -30,9 +30,7 @@ To deactivate the environment use:
 ```
 deactivate
 ```
-
 ### 1.2 Install requirements
-
 
 ```
 pip install -r requirements.txt
