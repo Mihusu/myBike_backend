@@ -56,19 +56,33 @@ class BikeOwner(BaseModel):
 class Bike(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
     frame_number: str = Field(...)
-    owner: BikeOwner | None
-    gender: BikeGender | None = None
-    is_electic: bool = False
-    kind: BikeKind | None = None
-    brand: str = "" # Should be a model
-    color: BikeColor | None = None
-    images: str = "" # Should be its own model or something else
-    receipt: str = "" # Same as images
+    owner: BikeOwner | None = None
+    gender: BikeGender
+    is_electic: bool
+    kind: BikeKind
+    brand: str # Should be a model
+    color: BikeColor
+    images: str # Should be its own model or something else
+    receipt: str # Same as images
     reported_stolen: bool = False
-    claim_token: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
-    claimed_date: datetime.datetime = datetime.datetime.now()
-    stolen_date: datetime.datetime = datetime.datetime.now()
+    claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
+    claimed_date: datetime.datetime | None
+    stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
-    state: BikeState | None = None # Figure out how to handle states
+    state: BikeState = BikeState.UNCLAIMED # Figure out how to handle these states
+
+
+class BikeRegistrationInfo(BaseModel):
     
-    
+    frame_number: str = Field(...)
+    gender: BikeGender
+    is_electic: bool
+    kind: BikeKind
+    brand: str
+    color: BikeColor
+    images: str = ""
+    receipt: str = ""
+
+# ___ Changelog ___
+# TODO: Allow for image upload
+# TODO: Add testing framework

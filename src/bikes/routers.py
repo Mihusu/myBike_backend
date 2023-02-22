@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Request, Response, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
-from src.bikes.models import BikeOwner, Bike
+from src.bikes.models import BikeOwner, Bike, BikeRegistrationInfo
 
 router = APIRouter(
     tags=['bikes'], 
@@ -30,9 +30,13 @@ def get_bike_by_id(id: str, request: Request) -> Bike:
 
 
 @router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED)
-def register_bike(request: Request, bike: Bike = Body(...)) -> Bike:
-    bike = jsonable_encoder(bike)
-    new_bike = request.app.database["bikes"].insert_one(bike)
+def register_bike(request: Request, bike_info: BikeRegistrationInfo = Body(...)) -> Bike:
+    
+    # @FIX: Check that bike with given frame number is not already registered
+    bike_info = jsonable_encoder(bike_info)
+    bike = Bike(**bike_info).dict()
+    
+    new_bike = request.app.database["bikes"].insert_one({'_id': bike['id'], **bike})
     created_bike = request.app.database["bikes"].find_one(
         {"_id": new_bike.inserted_id}
     )

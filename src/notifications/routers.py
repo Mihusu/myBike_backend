@@ -1,6 +1,4 @@
-from fastapi import Form, APIRouter, Body, Request, Response, HTTPException, status
-from twilio.twiml.messaging_response import MessagingResponse
-from twilio.request_validator import RequestValidator
+from fastapi import APIRouter
 
 from src.notifications.sms import send_sms  
 
@@ -9,7 +7,7 @@ router = APIRouter(
     prefix='/sms'
 )
 
-@router.get("/test")
+@router.get("/test", summary="Testing sending of an sms-message")
 def test():
     send_sms(msg="Hello Cycler!")
     

@@ -21,7 +21,7 @@ def startup_db_client():
     # For some reason, the database connection fails with SSL: CERTIFICATE_VERIFY_FAILED
     # when not using tlsCAFile=certifi.where(), so i am keeping it here for now until 
     # a new solution is found.
-    app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
+    app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where(), uuidRepresentation='standard')
     app.database = app.mongodb_client[config["DB_NAME"]]
 
 @app.on_event("shutdown")
