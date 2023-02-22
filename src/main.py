@@ -8,6 +8,7 @@ import certifi
 
 from src.bikes.routers import router as bike_router
 from src.auth.routers import router as auth_router
+from src.notifications.routers import router as notification_router
 
 app = FastAPI()
 
@@ -31,3 +32,4 @@ def shutdown_db_client():
 
 app.include_router(bike_router)
 app.include_router(auth_router)
+app.include_router(notification_router)
