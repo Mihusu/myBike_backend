@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Body, Request, Response, HTTPException, status
+from fastapi import APIRouter, Body, Form, Request, Response, HTTPException, UploadFile, File, status
 from fastapi.encoders import jsonable_encoder
+from ..storage.aws import upload_file
 
-from src.bikes.models import BikeOwner, Bike, BikeRegistrationInfo
+from .models import Bike, BikeColor, BikeGender, BikeKind
 
 router = APIRouter(
     tags=['bikes'], 
     prefix='/bikes'
-)
-
-example_owner = BikeOwner(
-    phone_number="+4512345678",
-    verified=True
 )
 
 
@@ -28,12 +24,32 @@ def get_bike_by_id(id: str, request: Request) -> Bike:
     
     return bike
 
-
 @router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED)
-def register_bike(request: Request, bike_info: BikeRegistrationInfo = Body(...)) -> Bike:
+def register_bike(
+    request: Request, 
+    frame_number: str = Form(...),
+    gender: BikeGender = Form(...),
+    is_electic: bool = Form(...),
+    kind: BikeKind = Form(...),
+    brand: str = Form(...),
+    color: BikeColor = Form(...),
+    images: list[UploadFile] = File(),
+    #receipts: list[UploadFile] = File(),
+) -> Bike:
+    
+    bike_info = {
+        'frame_number': frame_number, 
+        'gender': gender,
+        'is_electic': is_electic,
+        'kind': kind,
+        'brand': brand,
+        'color': color
+    }
+    
+    # Handle image upload
+    
     
     # @FIX: Check that bike with given frame number is not already registered
-    bike_info = jsonable_encoder(bike_info)
     bike = Bike(**bike_info).dict()
     
     new_bike = request.app.database["bikes"].insert_one({'_id': bike['id'], **bike})
@@ -42,6 +58,14 @@ def register_bike(request: Request, bike_info: BikeRegistrationInfo = Body(...))
     )
 
     return created_bike
+
+
+@router.post('/upload', response_description="Upload test")
+def upload_files(image : UploadFile = File(...)):
+    
+    upload_file(file=image.file, file_name=image.filename)
+    
+    return {"images": image}
 
 
 @router.delete("/{id}", response_description="Remove a bike")

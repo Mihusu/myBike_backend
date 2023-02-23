@@ -1,6 +1,7 @@
 import datetime
 from enum import Enum
 import uuid
+from fastapi import Form
 from pydantic import BaseModel, Field
 
 class BikeGender(str, Enum):
@@ -62,8 +63,8 @@ class Bike(BaseModel):
     kind: BikeKind
     brand: str # Should be a model
     color: BikeColor
-    images: str # Should be its own model or something else
-    receipt: str # Same as images
+    images: str | None # Should be its own model or something else
+    receipt: str | None # Same as images
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
@@ -73,15 +74,13 @@ class Bike(BaseModel):
 
 
 class BikeRegistrationInfo(BaseModel):
+    frame_number: str = Form(...)
+    gender: BikeGender = Form(...)
+    is_electic: bool = Form(...)
+    kind: BikeKind = Form(...)
+    brand: str = Form(...)
+    color: BikeColor = Form(...)
     
-    frame_number: str = Field(...)
-    gender: BikeGender
-    is_electic: bool
-    kind: BikeKind
-    brand: str
-    color: BikeColor
-    images: str = ""
-    receipt: str = ""
 
 # ___ Changelog ___
 # TODO: Allow for image upload
