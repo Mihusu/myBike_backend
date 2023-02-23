@@ -70,7 +70,7 @@ def upload_files(image : UploadFile = File(...)):
 
 
 @router.delete("/{id}", response_description="Remove a bike")
-def remove_bike(id: str, request: Request, response: Response):
+def remove_bike(id: uuid.UUID, request: Request, response: Response):
     delete_result = request.app.database["bikes"].delete_one({"_id": id})
 
     if delete_result.deleted_count == 1:
@@ -80,3 +80,17 @@ def remove_bike(id: str, request: Request, response: Response):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
 
 
+
+@router.post("/claim/{claim_token}", response_description="Claim a new bike")
+def claim_bike(claim_token: uuid.UUID, request: Request, response: Response):
+    bike_db = request.app.database["bikes"].find_one({"claim_token": claim_token})
+    bike = Bike(**bike_db)
+    
+    if bike.owner is None:
+        if bike.state is not bike.state.CLAIMED or bike.state.REPORTED_STOLEN:
+            request.app.database["bikes"].update_one({ "state" : bike.state.UNCLAIMED }, 
+                                                     { "$set": { "state" : bike.state.CLAIMED } })
+            response.status_code=status.HTTP_202_ACCEPTED
+            return response
+        
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
