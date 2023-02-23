@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Body, Form, Request, Response, HTTPException, UploadFile, File, status
 from fastapi.encoders import jsonable_encoder
 from ..storage.aws import upload_file
@@ -17,7 +18,7 @@ def get_bike_list(request: Request) -> list[Bike]:
 
 
 @router.get('/{id}', response_description="Get a single bike by id", status_code=status.HTTP_200_OK)
-def get_bike_by_id(id: str, request: Request) -> Bike:
+def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
     bike = request.app.database["bikes"].find_one({"_id": id})
     if bike is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
