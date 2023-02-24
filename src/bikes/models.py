@@ -2,7 +2,8 @@ import datetime
 from enum import Enum
 import uuid
 from fastapi import Form
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+import re as regex
 
 class BikeGender(str, Enum):
     MALE = "male",
@@ -63,14 +64,25 @@ class Bike(BaseModel):
     kind: BikeKind
     brand: str # Should be a model
     color: BikeColor
-    images: str | None # Should be its own model or something else
-    receipt: str | None # Same as images
+    images: list[str] | None # Should be its own model or something else
+    receipt: list[str] | None # Same as images
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
     state: BikeState = BikeState.UNCLAIMED # Figure out how to handle these states
+    
+    @validator('frame_number')
+    def validate_frame_number(cls, value):
+        """ Validates the frame number by the danish frame number format
+        @See: https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler 
+        """
+        valid = regex.search("^[a-zA-Z]{1,4}[0-9]+[a-zA-Z]$", value)
+        if valid:
+            return value
+        else:
+            raise ValueError(f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
 
 
 class BikeRegistrationInfo(BaseModel):

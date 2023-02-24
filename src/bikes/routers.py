@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, Body, Form, Request, Response, HTTPException, UploadFile, File, status
-from fastapi.encoders import jsonable_encoder
-from ..storage.aws import upload_file
+from pydantic import ValidationError
+from ..storage.aws import save_file
 
 from .models import Bike, BikeColor, BikeGender, BikeKind
 
@@ -34,8 +34,8 @@ def register_bike(
     kind: BikeKind = Form(...),
     brand: str = Form(...),
     color: BikeColor = Form(...),
-    images: list[UploadFile] = File(),
-    #receipts: list[UploadFile] = File(),
+    images: list[UploadFile] = File(default=[]),
+    receipts: list[UploadFile] = File(default=[]),
 ) -> Bike:
     
     bike_info = {
@@ -44,16 +44,19 @@ def register_bike(
         'is_electic': is_electic,
         'kind': kind,
         'brand': brand,
-        'color': color
+        'color': color,
+        'images': [save_file(image) for image in images if images],
+        'receipts': [save_file(receipt) for receipt in receipts if receipts]
     }
-    
-    # Handle image upload
-    
+        
     
     # @FIX: Check that bike with given frame number is not already registered
-    bike = Bike(**bike_info).dict()
+    try:
+        bike = Bike(**bike_info)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=e.errors())
     
-    new_bike = request.app.database["bikes"].insert_one({'_id': bike['id'], **bike})
+    new_bike = request.app.database["bikes"].insert_one({'_id': bike.id, **bike.dict()})
     created_bike = request.app.database["bikes"].find_one(
         {"_id": new_bike.inserted_id}
     )

@@ -1,9 +1,9 @@
+from datetime import datetime
 import logging
-from typing import BinaryIO
 from dotenv import dotenv_values
 import boto3
 from botocore.exceptions import ClientError
-import os
+from fastapi import HTTPException, UploadFile
 
 config = dotenv_values(".env")
 
@@ -14,25 +14,14 @@ s3_client = boto3.client(
     region_name=config['AWS_DEFAULT_REGION']
 )
 
-def upload_file(file: BinaryIO, file_name: str, object_name=None):
-    """Upload a file to S3 bucket
-    :param file: File in bytes form
-    :param file_name: Filename of the file to upload
-    :param bucket: Bucket to upload to
-    :param object_name: S3 object name. If not specified then file_name is used
-    :return: True if file was uploaded, else False
-    """
-    BUCKET_NAME = config['AWS_BUCKET_NAME']
+def save_file(file: UploadFile):
     
-    # If S3 object_name was not specified, use file_name
-    if object_name is None:
-        object_name = os.path.basename(file_name)
+    object_name = str(datetime.now()) + file.filename
 
     try:
-        response = s3_client.upload_fileobj(file, BUCKET_NAME, object_name)
-        print(response)
+        s3_client.upload_fileobj(file.file, config['AWS_BUCKET_NAME'], object_name)
+        return object_name
             
     except ClientError as e:
         logging.error(e)
-        return False
-    return True
+        raise HTTPException(status_code=500, detail=f"Error: Failed to save file {file.filename}")
