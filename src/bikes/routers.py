@@ -1,9 +1,11 @@
 import uuid
-from fastapi import APIRouter, Body, Form, Request, Response, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, Form, Request, Response, HTTPException, UploadFile, File, status
 from pydantic import ValidationError
-from ..storage.aws import save_file
+from src.storage.aws import save_file
+from src.bikes.dependencies import frame_number_not_registered
+from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind
 
-from .models import Bike, BikeColor, BikeGender, BikeKind
+
 
 router = APIRouter(
     tags=['bikes'], 
@@ -25,9 +27,9 @@ def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
     
     return bike
 
-@router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED)
+
+@router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED, dependencies=[Depends(frame_number_not_registered)])
 def register_bike(
-    request: Request, 
     frame_number: str = Form(...),
     gender: BikeGender = Form(...),
     is_electic: bool = Form(...),
@@ -35,7 +37,7 @@ def register_bike(
     brand: str = Form(...),
     color: BikeColor = Form(...),
     images: list[UploadFile] = File(default=[]),
-    receipts: list[UploadFile] = File(default=[]),
+    receipts: list[UploadFile] = File(default=[])
 ) -> Bike:
     
     bike_info = {
