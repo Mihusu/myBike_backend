@@ -55,14 +55,9 @@ def register_bike(
         bike = Bike(**bike_info)
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=e.errors())
+
+    return bike.save()
     
-    new_bike = request.app.collections["bikes"].insert_one({'_id': bike.id, **bike.dict()})
-    created_bike = request.app.collections["bikes"].find_one(
-        {"_id": new_bike.inserted_id}
-    )
-
-    return created_bike
-
 
 @router.delete("/{id}", response_description="Remove a bike")
 def remove_bike(id: uuid.UUID, request: Request, response: Response):

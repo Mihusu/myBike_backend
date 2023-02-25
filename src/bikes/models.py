@@ -2,8 +2,10 @@ import datetime
 from enum import Enum
 import uuid
 from fastapi import Form
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, PrivateAttr, validator
 import re as regex
+
+from src.models import Entity
 
 class BikeGender(str, Enum):
     MALE = "male",
@@ -55,8 +57,10 @@ class BikeOwner(BaseModel):
     created_at: datetime.datetime = datetime.datetime.now()
     
 
-class Bike(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
+class Bike(Entity):
+
+    _COLLECTION_NAME = PrivateAttr(default='bikes')
+
     frame_number: str = Field(...)
     owner: BikeOwner | None = None
     gender: BikeGender
@@ -75,8 +79,15 @@ class Bike(BaseModel):
     
     @validator('frame_number')
     def validate_frame_number(cls, value):
-        """ Validates the frame number by the danish frame number format
-        @See: https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler 
+        """ Validates the frame number according to the danish frame number format
+
+        MANUFACTUER_NUMBER | SERIAL_NUMBER | YEAR_MARK
+
+        MANUFACTUER_NUMBER  : 1..4 characters
+        SERIAL_NUMBER       : 1..* characters
+        YEAR_MARK           : 1 character
+
+        @See: https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for more info
         """
         valid = regex.search("^[a-zA-Z]{1,4}[0-9]+[a-zA-Z]$", value)
         if valid:
@@ -95,5 +106,4 @@ class BikeRegistrationInfo(BaseModel):
     
 
 # ___ Changelog ___
-# TODO: Allow for image upload
 # TODO: Add testing framework
