@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 
 from src.notifications.sms import send_sms  
 
@@ -9,7 +9,7 @@ router = APIRouter(
 
 @router.get("/test", summary="Testing sending of an sms-message")
 def test():
-    send_sms(msg="Hello Cycler!")
+    send_sms(msg=f"Brug koden {'abcd123efghijk'} til at indløse din cykel. \n\n@mincykel.app #abcd123efghijk")
     
     
     

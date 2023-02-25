@@ -61,7 +61,7 @@ class Bike(Entity):
 
     _COLLECTION_NAME = PrivateAttr(default='bikes')
 
-    frame_number: str = Field(...)
+    frame_number: str
     owner: BikeOwner | None = None
     gender: BikeGender
     is_electic: bool
@@ -76,24 +76,6 @@ class Bike(Entity):
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
     state: BikeState = BikeState.UNCLAIMED # Figure out how to handle these states
-    
-    @validator('frame_number')
-    def validate_frame_number(cls, value):
-        """ Validates the frame number according to the danish frame number format
-
-        MANUFACTUER_NUMBER | SERIAL_NUMBER | YEAR_MARK
-
-        MANUFACTUER_NUMBER  : 1..4 characters
-        SERIAL_NUMBER       : 1..* characters
-        YEAR_MARK           : 1 character
-
-        @See: https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for more info
-        """
-        valid = regex.search("^[a-zA-Z]{1,4}[0-9]+[a-zA-Z]$", value)
-        if valid:
-            return value
-        else:
-            raise ValueError(f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
 
 
 class BikeRegistrationInfo(BaseModel):

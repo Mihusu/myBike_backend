@@ -1,8 +1,9 @@
 import uuid
 from fastapi import APIRouter, Depends, Form, Request, Response, HTTPException, UploadFile, File, status
 from pydantic import ValidationError
+from src.notifications.sms import send_sms
 from src.storage.aws import save_file
-from src.bikes.dependencies import frame_number_not_registered
+from src.bikes.dependencies import *
 from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind
 
 
@@ -28,8 +29,13 @@ def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
     return bike
 
 
-@router.post('/', response_description="Register a new bike", status_code=status.HTTP_201_CREATED, dependencies=[Depends(frame_number_not_registered)])
+@router.post('/', 
+             response_description="Register a new bike", 
+             status_code=status.HTTP_201_CREATED, 
+             dependencies=[Depends(frame_number_not_registered), Depends(valid_danish_phone_number), Depends(valid_frame_number)]
+)
 def register_bike(
+    phone_number: str = Form(...),
     frame_number: str = Form(...),
     gender: BikeGender = Form(...),
     is_electic: bool = Form(...),
@@ -40,6 +46,8 @@ def register_bike(
     receipts: list[UploadFile] = File(default=[])
 ) -> Bike:
     
+    # @TODO Trim phone number after request have gone through
+
     bike_info = {
         'frame_number': frame_number, 
         'gender': gender,
@@ -50,14 +58,12 @@ def register_bike(
         'images': [save_file(image) for image in images if images],
         'receipts': [save_file(receipt) for receipt in receipts if receipts]
     }
-        
-    
-    # @FIX: Check that bike with given frame number is not already registered
-    try:
-        bike = Bike(**bike_info)
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=e.errors())
 
+    bike = Bike(**bike_info)
+
+    # Sending two sms messages so to allow for easy copying of the long claim token on phones.
+    send_sms(msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", to=phone_number)
+    
     return bike.save()
     
 
