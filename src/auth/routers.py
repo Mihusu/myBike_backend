@@ -30,7 +30,7 @@ def get_config():
 def authenticate(request: Request, user: BikeOwnerCredentials, Authorize: AuthJWT = Depends()):
     
     # Verify correct user
-    found_user = request.app.database['bike_owners'].find_one({'phone_number': user.phone_number})
+    found_user = request.app.collections['bike_owners'].find_one({'phone_number': user.phone_number})
     if not found_user:
         
         raise HTTPException(

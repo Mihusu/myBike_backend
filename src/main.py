@@ -1,11 +1,9 @@
+import certifi
 from dotenv import dotenv_values
 from pymongo import MongoClient
 from fastapi import FastAPI
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-
-import certifi
-
+from fastapi import FastAPI
+from src.database import MongoDatabase
 from src.bikes.routers import router as bike_router
 from src.auth.routers import router as auth_router
 from src.notifications.routers import router as notification_router
@@ -18,11 +16,13 @@ config = dotenv_values(".env")
 def startup_db_client():
     print("Setting up database...")
     
-    # For some reason, the database connection fails with SSL: CERTIFICATE_VERIFY_FAILED
-    # when not using tlsCAFile=certifi.where(), so i am keeping it here for now until 
-    # a new solution is found.
-    app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where(), uuidRepresentation='standard')
-    app.database = app.mongodb_client[config["DB_NAME"]]
+    mongo_db = MongoDatabase()
+    mongo_db.connect()
+
+    # By setting the client on the app its possible to get the connection
+    # from any request inside routers
+    app.mongodb_client = mongo_db.connection
+    app.collections = mongo_db.collections
 
 @app.on_event("shutdown")
 def shutdown_db_client():
