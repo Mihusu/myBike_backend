@@ -1,6 +1,5 @@
 import uuid
 from fastapi import APIRouter, Depends, Form, Request, Response, HTTPException, UploadFile, File, status
-from pydantic import ValidationError
 from src.notifications.sms import send_sms
 from src.storage.aws import save_file
 from src.bikes.dependencies import *
@@ -38,7 +37,7 @@ def register_bike(
     phone_number: str = Form(...),
     frame_number: str = Form(...),
     gender: BikeGender = Form(...),
-    is_electic: bool = Form(...),
+    is_electric: bool = Form(...),
     kind: BikeKind = Form(...),
     brand: str = Form(...),
     color: BikeColor = Form(...),
@@ -46,12 +45,10 @@ def register_bike(
     receipts: list[UploadFile] = File(default=[])
 ) -> Bike:
     
-    # @TODO Trim phone number after request have gone through
-
     bike_info = {
         'frame_number': frame_number, 
         'gender': gender,
-        'is_electic': is_electic,
+        'is_electric': is_electric,
         'kind': kind,
         'brand': brand,
         'color': color,
@@ -62,7 +59,10 @@ def register_bike(
     bike = Bike(**bike_info)
 
     # Sending two sms messages so to allow for easy copying of the long claim token on phones.
-    send_sms(msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", to=phone_number)
+    send_sms(
+        msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", 
+        to=phone_number.replace(' ','')
+    )
     
     return bike.save()
     

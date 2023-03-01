@@ -64,7 +64,7 @@ class Bike(Entity):
     frame_number: str
     owner: BikeOwner | None = None
     gender: BikeGender
-    is_electic: bool
+    is_electric: bool
     kind: BikeKind
     brand: str # Should be a model
     color: BikeColor
@@ -76,16 +76,6 @@ class Bike(Entity):
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
     state: BikeState = BikeState.UNCLAIMED # Figure out how to handle these states
-
-
-class BikeRegistrationInfo(BaseModel):
-    frame_number: str = Form(...)
-    gender: BikeGender = Form(...)
-    is_electic: bool = Form(...)
-    kind: BikeKind = Form(...)
-    brand: str = Form(...)
-    color: BikeColor = Form(...)
     
-
 # ___ Changelog ___
 # TODO: Add testing framework
