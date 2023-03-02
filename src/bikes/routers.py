@@ -5,8 +5,6 @@ from src.storage.aws import save_file
 from src.bikes.dependencies import *
 from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind
 
-
-
 router = APIRouter(
     tags=['bikes'], 
     prefix='/bikes'
