@@ -1,4 +1,5 @@
 import datetime
+import uuid
 import bcrypt
 from dotenv import dotenv_values
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 
 from src.notifications.sms import send_sms
 from src.auth.dependencies import has_access, phone_number_not_registered
-from src.bikes.models import BikeOwnerCredentials
+from src.bikes.models import BikeOwner, BikeOwnerCredentials
 from src.auth.models import BikeOwnerSession
 
 
@@ -60,7 +61,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     hashed_password = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
     
     session = BikeOwnerSession(phone_number=phone_number, hash=str(hashed_password))
-    #session.save()
+    session.save()
     
     send_sms(
         msg=f"Din verifikations kode er: {session.otp}",
@@ -69,10 +70,37 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     
     return {'session_id': session.id}
 
-
-
-
+@router.post('/register/me/chechotp', summary="Verify OTP of bike owner registration")
+def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
     
+    #1. Look up the session with given id
+    #2. Check that the session is not expired
+    #3. Check that the otp matches
+    #4. Create BikeOwner with given session details
+    #5. Generate token pair
+    
+    session = request.app.collections['bikeowner_sessions'].find_one({'_id': session_id})
+    if not session:
+        raise HTTPException(status_code=400, detail=f"Non-existing session with session id: {session_id}")
+    
+    if datetime.datetime.now() > session['expires_in']:
+        raise HTTPException(status_code=403, detail=f"ERROR: Session expired")
+    
+    if not otp == session['otp']:
+        raise HTTPException(status_code=403, detail=f"ERROR: Invalid OTP. Check sms")
+    
+    # Transfer over info from session object to bike owner details
+    bike_owner = BikeOwner(phone_number=session['phone_number'], hash=session['hash'])
+    bike_owner.save()
+    
+    # Maybe remove the session as the registration was successful?
+    
+    Authorize = AuthJWT()
+    return {
+        "access_token": Authorize.create_access_token(subject=bike_owner.id),
+        "refresh_token": Authorize.create_refresh_token(subject=bike_owner.id)
+    }
+
 
 
 # To be removed once demonstrated

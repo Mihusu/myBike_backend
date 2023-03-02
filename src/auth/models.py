@@ -20,7 +20,7 @@ class BikeOwnerSession(Entity):
     
     _COLLECTION_NAME = PrivateAttr(default='bikeowner_sessions')
     
-    otp: str = Field(default_factory=generate_otp)
+    otp: str = Field(default_factory=generate_otp)      # It might be a good idea to hash this. Although there is an in-build security in the expiration time
     hash: str
     phone_number: str
     expires_in : datetime.datetime = Field(default=datetime.datetime.now() + datetime.timedelta(minutes=5))

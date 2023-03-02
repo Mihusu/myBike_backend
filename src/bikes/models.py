@@ -50,10 +50,9 @@ class BikeOwnerCredentials(BaseModel):
     password: str = ""
     
     
-class BikeOwner(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, alias="_id")
-    phone_number: str = "" # TODO: Maybe hash this at some point to avoid possible leakage
-    verified: bool = False
+class BikeOwner(Entity):
+    phone_number: str   # TODO: Maybe hash this at some point to avoid possible leakage
+    hash: str
     created_at: datetime.datetime = datetime.datetime.now()
     
 
