@@ -5,6 +5,9 @@ config = dotenv_values(".env")
 
 def send_sms(msg: str, to: str = "+4542240440"):
     
+    if config['SMS_ENABLED'] == 'NO':
+        return False
+    
     API_URL = f"https://api.twilio.com/2010-04-01/Accounts/{config['TWILLIO_ACCOUNT_SID']}/Messages.json"
 
     response = requests.post(

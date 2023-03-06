@@ -70,7 +70,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     
     return {'session_id': session.id}
 
-@router.post('/register/me/chechotp', summary="Verify OTP of bike owner registration")
+@router.post('/register/me/check-otp', summary="Verify OTP of bike owner registration")
 def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
     
     #1. Look up the session with given id
