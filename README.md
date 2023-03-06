@@ -50,11 +50,11 @@ uvicorn src.main:app --reload
 Alternatively, if inside vscode editor, simply run the project by using the "Run and Debug" on 
 the sidepanel
 
-## 2. Development
+## 2. Development 
 
-### 2.1 Python version 3.11
+### 2.1 Python version 3.11 - Mandatory
 
-To get acurrate type-hints while developing, its recommended to have python version 3.11 or above
+It is mandatory to install Python version 3.11 or above to get accurate type-hints while developing
 
 ### 2.2 Commit policy
 
