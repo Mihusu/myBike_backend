@@ -3,14 +3,29 @@ from dotenv import dotenv_values
 from pymongo import MongoClient
 from fastapi import FastAPI
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.database import MongoDatabase
 from src.bikes.routers import router as bike_router
 from src.auth.routers import router as auth_router
 from src.notifications.routers import router as notification_router
 
+config = dotenv_values(".env")
+
+
 app = FastAPI()
 
-config = dotenv_values(".env")
+origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def startup_db_client():
