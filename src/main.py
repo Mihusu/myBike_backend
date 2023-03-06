@@ -1,13 +1,10 @@
 import certifi
 from dotenv import dotenv_values
-from pymongo import MongoClient
 from fastapi import FastAPI
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.database import MongoDatabase
-from src.bikes.routers import router as bike_router
-from src.auth.routers import router as auth_router
-from src.notifications.routers import router as notification_router
+from src.routers import main_router
 
 config = dotenv_values(".env")
 
@@ -44,7 +41,4 @@ def shutdown_db_client():
     print("Closing database...")
     app.mongodb_client.close()
 
-
-app.include_router(bike_router)
-app.include_router(auth_router)
-app.include_router(notification_router)
+app.include_router(main_router)
