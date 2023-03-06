@@ -51,6 +51,9 @@ class BikeOwnerCredentials(BaseModel):
     
     
 class BikeOwner(Entity):
+    
+    _COLLECTION_NAME = PrivateAttr(default='bike_owners')
+    
     phone_number: str   # TODO: Maybe hash this at some point to avoid possible leakage
     hash: str
     created_at: datetime.datetime = datetime.datetime.now()

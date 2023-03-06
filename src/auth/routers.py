@@ -70,7 +70,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     
     return {'session_id': session.id}
 
-@router.post('/register/me/check-otp', summary="Verify OTP of bike owner registration")
+@router.post('/register/me/check-otp', summary="Verify OTP of bike owner registration", status_code=status.HTTP_201_CREATED)
 def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
     
     #1. Look up the session with given id
@@ -84,7 +84,7 @@ def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
         raise HTTPException(status_code=400, detail=f"Non-existing session with session id: {session_id}")
     
     if datetime.datetime.now() > session['expires_in']:
-        raise HTTPException(status_code=403, detail=f"ERROR: Session expired")
+        raise HTTPException(status_code=403, detail=f"ERROR: Session expired: {session['expires_in']}")
     
     if not otp == session['otp']:
         raise HTTPException(status_code=403, detail=f"ERROR: Invalid OTP. Check sms")
@@ -94,11 +94,10 @@ def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
     bike_owner.save()
     
     # Maybe remove the session as the registration was successful?
-    
     Authorize = AuthJWT()
     return {
-        "access_token": Authorize.create_access_token(subject=bike_owner.id),
-        "refresh_token": Authorize.create_refresh_token(subject=bike_owner.id)
+        "access_token": Authorize.create_access_token(subject=str(bike_owner.id)),
+        "refresh_token": Authorize.create_refresh_token(subject=str(bike_owner.id))
     }
 
 
