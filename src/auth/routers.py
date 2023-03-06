@@ -2,7 +2,7 @@ import datetime
 import uuid
 import bcrypt
 from dotenv import dotenv_values
-from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
+from fastapi import APIRouter, Body, HTTPException, Depends, Query, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
@@ -49,7 +49,6 @@ def authenticate(request: Request, user: BikeOwnerCredentials, Authorize: AuthJW
         "refresh_token": Authorize.create_refresh_token(subject=found_user['_id'])
     }
 
-
 @router.post('/register/me', summary="Register a new bike owner")
 def register_bike_owner(request: Request, phone_number: str = Depends(phone_number_not_registered), password: str = Body()):
     
@@ -71,7 +70,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     return {'session_id': session.id}
 
 @router.post('/register/me/check-otp', summary="Verify OTP of bike owner registration", status_code=status.HTTP_201_CREATED)
-def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
+def verify_otp(request: Request, otp: str = Body(), session_id: uuid.UUID = Body()):
     
     #1. Look up the session with given id
     #2. Check that the session is not expired
@@ -99,8 +98,6 @@ def verify_otp(request: Request, session_id: uuid.UUID, otp: str = Body()):
         "access_token": Authorize.create_access_token(subject=str(bike_owner.id)),
         "refresh_token": Authorize.create_refresh_token(subject=str(bike_owner.id))
     }
-
-
 
 # To be removed once demonstrated
 @router.get('/protected', summary="Example of a protected route")
