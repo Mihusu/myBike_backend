@@ -42,7 +42,6 @@ class BikeColor(str, Enum):
 class BikeState(str, Enum):
     UNCLAIMED = "unclaimed",
     CLAIMED = "claimed",
-    REPORTED_STOLEN = "reported_stolen"
 
 
 class BikeOwnerCredentials(BaseModel):
@@ -64,7 +63,7 @@ class Bike(Entity):
     _COLLECTION_NAME = PrivateAttr(default='bikes')
 
     frame_number: str
-    owner: BikeOwner | None = None
+    owner: uuid.UUID | None = None
     gender: BikeGender
     is_electric: bool
     kind: BikeKind
