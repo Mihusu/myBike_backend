@@ -1,9 +1,11 @@
+import datetime
 import uuid
 from fastapi import APIRouter, Depends, Form, Request, Response, HTTPException, UploadFile, File, status
+from src.auth.dependencies import authenticated_request
 from src.notifications.sms import send_sms
 from src.storage.aws import save_file
 from src.bikes.dependencies import *
-from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind
+from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind, BikeOwner, BikeState
 
 router = APIRouter(
     tags=['bikes'], 
@@ -11,13 +13,23 @@ router = APIRouter(
 )
 
 
-@router.get('/')
-def get_bike_list(request: Request) -> list[Bike]:
-    bikes = list(request.app.collections["bikes"].find(limit=100))
+@router.get(
+    '/me',
+    description="Retrieve a list of owned bikes"
+)
+def get_my_bikes(request: Request, user: BikeOwner = Depends(authenticated_request)) -> list[Bike]:
+    bikes = list(request.app.collections["bikes"].find(
+        {
+            'owner': user.id
+        }
+    ))
     return bikes
 
-
-@router.get('/{id}', response_description="Get a single bike by id", status_code=status.HTTP_200_OK)
+@router.get(
+    '/{id}', 
+    description="Get a single bike by id", 
+    status_code=status.HTTP_200_OK
+)
 def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
     bike = request.app.collections["bikes"].find_one({"_id": id})
     if bike is None:
@@ -25,11 +37,11 @@ def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
     
     return bike
 
-
-@router.post('/', 
-             response_description="Register a new bike", 
-             status_code=status.HTTP_201_CREATED, 
-             dependencies=[Depends(frame_number_not_registered), Depends(valid_danish_phone_number), Depends(valid_frame_number)]
+@router.post(
+    '/', 
+    description="Register a new bike", 
+    status_code=status.HTTP_201_CREATED, 
+    dependencies=[Depends(frame_number_not_registered), Depends(valid_danish_phone_number), Depends(valid_frame_number)]
 )
 def register_bike(
     phone_number: str = Form(...),
@@ -56,7 +68,6 @@ def register_bike(
 
     bike = Bike(**bike_info)
 
-    # Sending two sms messages so to allow for easy copying of the long claim token on phones.
     send_sms(
         msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", 
         to=phone_number.replace(' ','')
@@ -64,8 +75,13 @@ def register_bike(
     
     return bike.save()
     
-
-@router.delete("/{id}", response_description="Remove a bike")
+# This feature is still questionalable.
+# The deletion or removal of ones own bike should probably be handled
+# as a different process.
+@router.delete(
+    '/{id}', 
+    description="Remove a bike"
+)
 def remove_bike(id: uuid.UUID, request: Request, response: Response):
     delete_result = request.app.collections["bikes"].delete_one({"_id": id})
 
@@ -77,16 +93,24 @@ def remove_bike(id: uuid.UUID, request: Request, response: Response):
 
 
 
-@router.post("/claim/{claim_token}", response_description="Claim a new bike")
-def claim_bike(claim_token: uuid.UUID, request: Request, response: Response):
-    bike_db = request.app.collections["bikes"].find_one({"claim_token": claim_token})
-    bike = Bike(**bike_db)
-    
-    if bike.owner is None:
-        if bike.state is not bike.state.CLAIMED or bike.state.REPORTED_STOLEN:
-            request.app.collections["bikes"].update_one({ "state" : bike.state.UNCLAIMED }, 
-                                                     { "$set": { "state" : bike.state.CLAIMED } })
-            response.status_code=status.HTTP_202_ACCEPTED
-            return response
-        
+@router.post("/claim/{claim_token}", description="Claim a new bike")
+def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depends(authenticated_request)) -> Bike:
+    bike_in_db = request.app.collections["bikes"].find_one({"claim_token": claim_token})
+    if not bike_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
+    
+    bike = Bike(**bike_in_db)
+    
+    if bike.state == BikeState.CLAIMED or bike.owner:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Bike is already claimed")
+    if bike.reported_stolen:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Bike is reported to be stolen. If you think this is a mistake, please report it to mincykel@support.dk")
+    
+    # This hands over the ownership to the sender of the request
+    bike.owner = user.id
+    bike.state = BikeState.CLAIMED
+    bike.claimed_date = datetime.datetime.now()
+    bike.save()
+    
+    return bike
+    

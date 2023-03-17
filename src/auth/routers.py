@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 from src.notifications.sms import send_sms
-from src.auth.dependencies import has_access, phone_number_not_registered
+from src.auth.dependencies import authenticated_request, valid_token, phone_number_not_registered
 from src.bikes.models import BikeOwner, BikeOwnerCredentials
 from src.auth.models import BikeOwnerSession
 
@@ -45,8 +45,8 @@ def authenticate(request: Request, user: BikeOwnerCredentials, Authorize: AuthJW
     # Verify password
     
     return {
-        "access_token": Authorize.create_access_token(subject=found_user['_id']),
-        "refresh_token": Authorize.create_refresh_token(subject=found_user['_id'])
+        "access_token": Authorize.create_access_token(subject=str(found_user['_id'])),
+        "refresh_token": Authorize.create_refresh_token(subject=str(found_user['_id']))
     }
 
 @router.post('/register/me', summary="Register a new bike owner")
@@ -101,5 +101,9 @@ def verify_otp(request: Request, otp: str = Body(), session_id: uuid.UUID = Body
 
 # To be removed once demonstrated
 @router.get('/protected', summary="Example of a protected route")
-def protected_route(token: str = Depends(has_access)):
+def protected_route(token: str = Depends(valid_token)):
     return {"access_granted", token}
+
+@router.get('/protected-with.user', summary="Example of a protected route that gets the user profile")
+def protected_route_user(user: BikeOwner = Depends(authenticated_request)):
+    return user
