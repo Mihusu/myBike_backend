@@ -12,7 +12,6 @@ security = HTTPBearer(description="Paste in your access token here to be used in
 config = dotenv_values(".env")
 
 def valid_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    
     token = credentials.credentials
     
     try:

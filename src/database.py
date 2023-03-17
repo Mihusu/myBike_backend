@@ -10,7 +10,7 @@ config = dotenv_values(".env")
 class MongoDatabase:
 
     connection      : MongoClient
-    collections      : Collection
+    collections     : Collection
 
     def connect(self):
         """Opens a connection to the mongo database"""

@@ -21,6 +21,6 @@ class BikeOwnerSession(Entity):
     _COLLECTION_NAME = PrivateAttr(default='bikeowner_sessions')
     
     otp: str = Field(default_factory=generate_otp)      # It might be a good idea to hash this. Although there is an in-build security in the expiration time
-    hash: str
+    hash: bytes
     phone_number: str
     expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))

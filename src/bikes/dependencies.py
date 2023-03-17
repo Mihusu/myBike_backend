@@ -13,7 +13,7 @@ def valid_frame_number(frame_number: str = Form(...)):
     MANUFACTUER_NUMBER | SERIAL_NUMBER | YEAR_MARK
 
     MANUFACTUER_NUMBER  : 1..4 characters
-    SERIAL_NUMBER       : 1..* characters
+    SERIAL_NUMBER       : 1..* digits
     YEAR_MARK           : 1 character
 
     @See: https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for more info

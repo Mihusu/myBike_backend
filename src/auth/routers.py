@@ -2,14 +2,13 @@ import datetime
 import uuid
 import bcrypt
 from dotenv import dotenv_values
-from fastapi import APIRouter, Body, HTTPException, Depends, Query, Request, status
+from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
-
+from src.bikes.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import authenticated_request, valid_token, phone_number_not_registered
-from src.bikes.models import BikeOwner, BikeOwnerCredentials
 from src.auth.models import BikeOwnerSession
 
 
@@ -21,7 +20,7 @@ router = APIRouter(
 )
 
 class Settings(BaseModel):
-    authjwt_secret_key: str = config['JWT_SECRET']
+    authjwt_secret_key = config['JWT_SECRET']
     authjwt_access_token_expires: datetime.timedelta = datetime.timedelta(minutes=30)
     
 
@@ -31,18 +30,20 @@ def get_config():
 
 
 @router.post('/token', summary="Authenticate to get an access token")
-def authenticate(request: Request, user: BikeOwnerCredentials, Authorize: AuthJWT = Depends()):
+def authenticate(request: Request, phone_number: str = Body(), password: str = Body(), Authorize: AuthJWT = Depends()):
     
-    # Verify correct user
-    found_user = request.app.collections['bike_owners'].find_one({'phone_number': user.phone_number})
+    # Verify user exists
+    found_user = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if not found_user:
-        
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail=f"Wrong phonenumber or password"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Bike owner not found")
     
     # Verify password
+    valid_password = bcrypt.checkpw(
+        password=password.encode(encoding="utf-8"), 
+        hashed_password=found_user['hash'].encode(encoding="utf-8")
+    )
+    if not valid_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid credentials")
     
     return {
         "access_token": Authorize.create_access_token(subject=str(found_user['_id'])),
@@ -59,7 +60,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     
     hashed_password = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
     
-    session = BikeOwnerSession(phone_number=phone_number, hash=str(hashed_password))
+    session = BikeOwnerSession(phone_number=phone_number, hash=hashed_password)
     session.save()
     
     send_sms(
@@ -83,10 +84,10 @@ def verify_otp(request: Request, otp: str = Body(), session_id: uuid.UUID = Body
         raise HTTPException(status_code=400, detail=f"Non-existing session with session id: {session_id}")
     
     if datetime.datetime.now() > session['expires_in']:
-        raise HTTPException(status_code=403, detail=f"ERROR: Session expired: {session['expires_in']}")
+        raise HTTPException(status_code=403, detail=f"Session expired at: {session['expires_in']}")
     
     if not otp == session['otp']:
-        raise HTTPException(status_code=403, detail=f"ERROR: Invalid OTP. Check sms")
+        raise HTTPException(status_code=403, detail=f"Invalid OTP")
     
     # Transfer over info from session object to bike owner details
     bike_owner = BikeOwner(phone_number=session['phone_number'], hash=session['hash'])

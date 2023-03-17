@@ -43,18 +43,13 @@ class BikeState(str, Enum):
     UNCLAIMED = "unclaimed",
     CLAIMED = "claimed",
 
-
-class BikeOwnerCredentials(BaseModel):
-    phone_number: str = ""
-    password: str = ""
-    
     
 class BikeOwner(Entity):
     
     _COLLECTION_NAME = PrivateAttr(default='bike_owners')
     
     phone_number: str   # TODO: Maybe hash this at some point to avoid possible leakage
-    hash: str
+    hash: bytes
     created_at: datetime.datetime = datetime.datetime.now()
     
 
