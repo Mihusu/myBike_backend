@@ -74,7 +74,7 @@ def register_bike(
     
     return bike.save()
     
-# This feature is still questionalable.
+# This feature is still questionable.
 # The deletion or removal of ones own bike should probably be handled
 # as a different process.
 @router.delete(
@@ -110,3 +110,23 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depe
     bike.save()
     
     return bike
+
+@router.get(
+    '/{id}/reportstolen', 
+    description="Report a bike stolen", 
+    status_code=status.HTTP_200_OK
+)
+def report_bike_stolen(
+    id: uuid.UUID,
+    request: Request,
+    user : BikeOwner = Depends(authenticated_request)
+    ) -> Bike:
+
+    bike_in_db = request.app.collections["bikes"].find_one({"_id": id})
+    bike: Bike = Bike(**bike_in_db)
+
+    if not bike.owner == user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"User is not the bike owner")
+    bike.reported_stolen = not bike.reported_stolen
+    
+    return bike.save()
