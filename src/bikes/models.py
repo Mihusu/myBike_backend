@@ -4,7 +4,7 @@ from enum import Enum
 from pydantic import Field, PrivateAttr
 
 from src.models import Entity
-from src.storage.models import S3File, S3Files
+from src.storage.models import S3File
 
 class BikeGender(str, Enum):
     MALE = "male",
@@ -63,14 +63,15 @@ class Bike(Entity):
     kind: BikeKind
     brand: str                          # Should probably be a model but is fine for now
     color: BikeColor
-    images: S3File | None = S3File.field(path='test-images', allowed_content_types=['image/png'])
-    receipt: list[str] | None           # Same as images
+    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=['image/png', 'image/jpeg', 'image/jpg'])
+    receipt: S3File | None = S3File.field(path='bike-receipts', allowed_content_types=['*'])
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
-    state: BikeState = BikeState.UNCLAIMED      # Figure out how to handle these states
+    state: BikeState = BikeState.UNCLAIMED      # Simple state variable is fine for now. Maybe in the future, more structure to the state could be needed
     
 # ___ Changelog ___
 # TODO: Add testing framework
+# TODO: Wrap up S3Files

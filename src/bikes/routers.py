@@ -6,7 +6,6 @@ from src.notifications.sms import send_sms
 from src.storage.aws import save_file
 from src.bikes.dependencies import *
 from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind, BikeOwner, BikeState
-from src.storage.models import ModelWithImage
 
 router = APIRouter(
     tags=['bikes'], 
@@ -52,22 +51,21 @@ def register_bike(
     kind: BikeKind = Form(...),
     brand: str = Form(...),
     color: BikeColor = Form(...),
-    images: list[UploadFile] = File(default=[]),
-    receipts: list[UploadFile] = File(default=[])
+    image: UploadFile = File(default=None),
+    receipt: UploadFile = File(default=None)
 ) -> Bike:
     
-    bike_info = {
-        'frame_number': frame_number, 
-        'gender': gender,
-        'is_electric': is_electric,
-        'kind': kind,
-        'brand': brand,
-        'color': color,
-    }
-
-    bike = Bike(**bike_info)
-    bike.images.upload_multiple(images)
-    bike.receipt.upload(receipt)
+    # Need to transfer all Form fields to
+    bike = Bike(
+        frame_number=frame_number,
+        gender= gender,
+        is_electric= is_electric,
+        kind= kind,
+        brand= brand,
+        color= color,
+    )
+    bike.image.upload_and_set(image)
+    bike.receipt.upload_and_set(receipt)
 
     send_sms(
         msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", 
@@ -112,19 +110,3 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depe
     bike.save()
     
     return bike
-
-@router.post('/upload-test', description="Test upload", status_code=status.HTTP_201_CREATED)
-def upload_test(file: UploadFile = File()):
-
-    model = ModelWithImage()
-    model.image.upload(file)
-    model.save()
-
-    return {'success': True}
-
-@router.post('/fetch-resource-with-image', description="Test fetch of resource with image", status_code=status.HTTP_201_CREATED)
-def get_models_with_file(request: Request):
-    all_files = list(request.app.collections['testfiles'].find())
-    converted_files = [ModelWithImage(**file) for file in all_files]
-    as_dict = [file.dict() for file in converted_files]
-    return as_dict

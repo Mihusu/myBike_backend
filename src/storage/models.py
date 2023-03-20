@@ -11,7 +11,6 @@ from botocore.exceptions import ClientError
 from src.models import Entity
 
 
-
 config = dotenv_values(".env")
 
 s3_client = boto3.client(
@@ -41,10 +40,11 @@ class S3File(BaseModel):
         s3f._max_size = max_size
         return s3f
 
-    def upload(self, file: UploadFile):
+    def upload_and_set(self, file: UploadFile):
 
-        if not file.content_type in self._allowed_content_types:
-            raise HTTPException(status_code=400, detail=f"Invalid content for the given file. Valid content types include: {self._allowed_content_types}")
+        if not '*' in self._allowed_content_types:
+            if not file.content_type in self._allowed_content_types:
+                raise HTTPException(status_code=400, detail=f"Invalid content type for file '{file.filename}'. Valid content types include: {self._allowed_content_types}")
         if self._max_size:
             if file.size > self._max_size:
                 raise HTTPException(status_code=400, detail=f"File size too large. Allowed file size is: {self._max_size // 1000}KB")
@@ -68,29 +68,4 @@ class S3File(BaseModel):
     
     class Config:
         underscore_attrs_are_private = True
-
-
-class S3Files(BaseModel):
-    path                    : str           # Path at where to save the given files on aws. Ex "images" would put the file at '/images/FILE' in s3
-    allowed_content_types   : list[str]     # Ex. ['image/png', 'application/pdf'] etc
-    max_size                : int | None    # Optional max size of files in bytes
-
-    files                   : list[S3File]
-
-    @classmethod
-    def field(cls, path: str, allowed_content_types: list[str], max_size: int | None = None) -> Self:
-        return S3File(_path=path, _allowed_content_types=allowed_content_types, _max_size=max_size)
     
-    def upload_multiple(self, files: list[UploadFile]):
-        for file in files:
-            s3_file = S3File(path=self.path, allowed_content_types=self.allowed_content_types, max_size=self.max_size)
-            s3_file.upload(file)
-            files.append(s3_file)
-    
-
-
-class ModelWithImage(Entity):
-    _COLLECTION_NAME = PrivateAttr(default='testfiles')
-    
-    image : S3File = S3File.field(path='test-images', allowed_content_types=['image/png'])
-
