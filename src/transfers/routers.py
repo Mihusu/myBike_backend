@@ -40,9 +40,9 @@ def create_transfer(
     if bike.reported_stolen:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is reported stolen. Transfer disallowed")
     
-    # Check bike not in transfer
-    if bike.state == BikeState.IN_TRANSFER:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is already in transfer")
+    # Check bike is transferable
+    if not bike.state == BikeState.TRANSFERABLE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is already in transfer or not transferable")
     
     # Make a transfer object
     transfer_info = {
@@ -53,6 +53,7 @@ def create_transfer(
 
     transfer = BikeTransfer(**transfer_info)
     bike.state = BikeState.IN_TRANSFER
+
     bike.save()
 
     # Return transfer object to request sender
@@ -81,7 +82,7 @@ def accept_transfer(
     
     # Checks if the requester is also the receiver from a transfer
     if requester.id != transfer.receiver:
-        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"The receiver is not the same person in the transfer")
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"Requester is not recipient in the transfer")
     
     # This hands over the ownership to the sender of the request
     bike.owner = requester.id
@@ -99,6 +100,7 @@ def retract_transfer(
     request: Request,
     requester: BikeOwner = Depends(authenticated_request)
     ):
+    
     transfer_in_db: BikeTransfer = request.app.collections["transfers"].find_one({"_id": id})
     transfer = BikeTransfer(**transfer_in_db)
 
@@ -123,7 +125,39 @@ def retract_transfer(
     bike = Bike(**bike_in_db)
     bike.state = BikeState.TRANSFERABLE
 
-    transfer.save()
     bike.save()
 
-    return transfer
+    return transfer.save()
+
+@router.post('/{:id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+def reject_transfer(
+    request: Request, 
+    requester: BikeOwner = Depends(authenticated_request), 
+    bike_id: uuid.UUID = Depends(bike_with_id_exists),
+    transfer_id: uuid.UUID = Depends(transfer_with_id_exists)
+) -> BikeTransfer:
+         
+    # Checks if the requester is also the receiver in a transfer
+    if not requester.id == transfer.receiver:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"Requester does not match transfer recipient")
+    
+    # Get bike
+    bike_in_db = request.app.collections["bikes"].find_one({"_id": bike_id})
+    bike = Bike(**bike_in_db)
+    
+    # Get transfer
+    transfer_in_db = request.app.collections["transfers"].find_one({"_id": transfer_id})
+    transfer = BikeTransfer(**transfer_in_db)
+
+    # Checks bike is in transfer and transfer is pending
+    if not bike.state == BikeState.IN_TRANSFER or not transfer.state == BikeTransferState.PENDING:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike not in transfer or transfer not pending")
+    
+    # This does not hand over the ownership to the sender of the request
+    bike.state = BikeState.TRANSFERABLE
+    transfer.state = BikeTransferState.CLOSED
+    transfer.closed_at = datetime.datetime.now()
+
+    bike.save()
+
+    return transfer.save()
