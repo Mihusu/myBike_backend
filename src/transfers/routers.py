@@ -21,30 +21,30 @@ def create_transfer(
     bike_id: uuid.UUID = Depends(bike_with_id_exists)
 ) -> BikeTransfer:
     
-    #check receiver exists
+    # Check receiver exists
     receiver_in_db = request.app.collections["bike_owners"].find_one({"phone_number": receiver_phone_number})
     if not receiver_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike owner with phone number {receiver_phone_number} not found")
     
-    #check bike exists
-    #done in dependencies
+    # Check bike exists
+    # is done in dependencies
 
-    #check sender owns bike
+    # Check sender owns bike
     bike_owner = request.app.collections["bikes"].find_one({"owner": sender.id})
     if not bike_owner:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike owner with phone number {sender.phone_number} does not own bike with id {bike_id}")
     
-    #check bike not stolen
+    # Check bike not stolen
     bike_in_db = request.app.collections["bikes"].find_one({"_id": bike_id})
     bike = Bike(**bike_in_db)
     if bike.reported_stolen:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is reported stolen. Transfer disallowed")
     
-    #check bike not in transfer
+    # Check bike not in transfer
     if bike.state == BikeState.IN_TRANSFER:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is already in transfer")
     
-    #Make a transfer object
+    # Make a transfer object
     transfer_info = {
         'sender': sender.id, 
         'receiver': receiver_in_db["_id"],
@@ -55,7 +55,7 @@ def create_transfer(
     bike.state = BikeState.IN_TRANSFER
     bike.save()
 
-    #return transfer object to request sender
+    # Return transfer object to request sender
     return transfer.save()
 
 
@@ -73,7 +73,7 @@ def accept_transfer(
     if bike.reported_stolen:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is reported stolen. Transfer disallowed")
 
-    # Checks the transfer state is in transfer and is pending
+    # Checks bike is in transfer and transfer is pending
     transfer_in_db = request.app.collections["transfers"].find_one({"_id": transfer_id})
     transfer = BikeTransfer(**transfer_in_db)
     if bike.state != BikeState.IN_TRANSFER or transfer.state != BikeTransferState.PENDING:
@@ -87,6 +87,7 @@ def accept_transfer(
     bike.owner = requester.id
     bike.state = BikeState.TRANSFERABLE
     transfer.state = BikeTransferState.CLOSED
+    transfer.closed_at = datetime.datetime.now()
 
     bike.save()
 
@@ -96,30 +97,33 @@ def accept_transfer(
 def retract_transfer(
     id: uuid.UUID,
     request: Request,
-    sender: BikeOwner = Depends(authenticated_request)
+    requester: BikeOwner = Depends(authenticated_request)
     ):
     transfer_in_db: BikeTransfer = request.app.collections["transfers"].find_one({"_id": id})
+    transfer = BikeTransfer(**transfer_in_db)
 
-    #check transfer exist and pending
+    # Check transfer exist
     if not transfer_in_db:
-        #throw up
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No such transfer found")
     
-    transfer = BikeTransfer(**transfer_in_db)
-    #check transfer pending
+    # Check transfer pending
     if not transfer.state == BikeTransferState.PENDING:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
 
-    #check sender is original transferer 
-    if not sender.id == transfer.sender:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
+    # Check sender is original transferer 
+    if not requester.id == transfer.sender:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Requester id does not match original transferer. Cannot decline transfer")
         
-    #update transfer and save
-    transfer.state == BikeTransferState.CLOSED
-
-    #update bike state and save
+    # Update transfer state
+    transfer.state = BikeTransferState.CLOSED
+    transfer.closed_at = datetime.datetime.now()
+    
+    # Update bike state
     bike_in_db: Bike = request.app.collections["bikes"].find_one({"_id": transfer.bike_id})
     bike = Bike(**bike_in_db)
     bike.state = BikeState.TRANSFERABLE
 
-    return transfer.save(), bike.save()
+    transfer.save()
+    bike.save()
+
+    return transfer

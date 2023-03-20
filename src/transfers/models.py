@@ -19,4 +19,5 @@ class BikeTransfer(Entity):
     receiver: uuid.UUID
     bike_id: uuid.UUID
     created_at: datetime.datetime = datetime.datetime.now()
+    closed_at: datetime.datetime = None
     state: BikeTransferState = BikeTransferState.PENDING
