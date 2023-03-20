@@ -24,7 +24,7 @@ def valid_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 def authenticated_request(request: Request, token = Depends(valid_token)) -> BikeOwner:
     """
-    Authenticates the request by verifying the incomming jwt token and
+    Authenticates the request by verifying the incoming jwt token and
     returns the user of the token
     """
     token_claims = jwt.decode(token, key=config['JWT_SECRET'])
@@ -32,9 +32,9 @@ def authenticated_request(request: Request, token = Depends(valid_token)) -> Bik
     return BikeOwner(**user)
     
 def phone_number_not_registered(request: Request, phone_number: str = Body()):
-    """Check that given phonenumber does not already exist in the database"""
+    """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
-        raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phonenumber '{phone_number}'")
+        raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phone number '{phone_number}'")
     
     return phone_number
