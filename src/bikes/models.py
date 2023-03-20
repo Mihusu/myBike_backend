@@ -39,8 +39,8 @@ class BikeColor(str, Enum):
 
 
 class BikeState(str, Enum):
-    UNCLAIMED = "unclaimed",
-    CLAIMED = "claimed",
+    TRANSFERABLE = "transferable",
+    IN_TRANSFER = "in_transfer",
 
     
 class BikeOwner(Entity):
@@ -70,7 +70,7 @@ class Bike(Entity):
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
-    state: BikeState = BikeState.UNCLAIMED      # Simple state variable is fine for now. Maybe in the future, more structure to the state could be needed
+    state: BikeState = BikeState.TRANSFERABLE # Figure out how to handle these states
     
 # ___ Changelog ___
 # TODO: Add testing framework

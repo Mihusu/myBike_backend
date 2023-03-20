@@ -7,16 +7,16 @@ import re as regex
 
 from src.models import Entity
 
-class TransferState(str, Enum):
+class BikeTransferState(str, Enum):
     PENDING = "pending",
     CLOSED = "closed"
 
-class Transfer(Entity):
+class BikeTransfer(Entity):
 
     _COLLECTION_NAME = PrivateAttr(default='transfers')
 
-    sender: str
-    receiver: str
-    bikeId: str
+    sender: uuid.UUID
+    receiver: uuid.UUID
+    bike_id: uuid.UUID
     created_at: datetime.datetime = datetime.datetime.now()
-    state: TransferState.PENDING
+    state: BikeTransferState = BikeTransferState.PENDING
