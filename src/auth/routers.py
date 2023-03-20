@@ -39,7 +39,7 @@ def authenticate(request: Request, phone_number: str = Body(), password: str = B
     
     # Verify password
     valid_password = bcrypt.checkpw(
-        password=password.encode(encoding="utf-8"), 
+        password=password.encode(encoding="utf-8"),  #TODO: Check for right conversion between str & bytes
         hashed_password=found_user['hash'].encode(encoding="utf-8")
     )
     if not valid_password:
