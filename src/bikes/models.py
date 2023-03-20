@@ -74,4 +74,3 @@ class Bike(Entity):
     
 # ___ Changelog ___
 # TODO: Add testing framework
-# TODO: Wrap up S3Files

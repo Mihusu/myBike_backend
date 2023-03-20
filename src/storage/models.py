@@ -41,7 +41,8 @@ class S3File(BaseModel):
         return s3f
 
     def upload_and_set(self, file: UploadFile):
-
+        if not file:
+            return
         if not '*' in self._allowed_content_types:
             if not file.content_type in self._allowed_content_types:
                 raise HTTPException(status_code=400, detail=f"Invalid content type for file '{file.filename}'. Valid content types include: {self._allowed_content_types}")
