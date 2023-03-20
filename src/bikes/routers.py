@@ -98,14 +98,14 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depe
     
     bike = Bike(**bike_in_db)
     
-    if bike.state == BikeState.CLAIMED or bike.owner:
+    if bike.owner:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Bike is already claimed")
     if bike.reported_stolen:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Bike is reported to be stolen. If you think this is a mistake, please report it to mincykel@support.dk")
     
     # This hands over the ownership to the sender of the request
     bike.owner = user.id
-    bike.state = BikeState.CLAIMED
+    bike.state = BikeState.TRANSFERABLE
     bike.claimed_date = datetime.datetime.now()
     bike.save()
     
