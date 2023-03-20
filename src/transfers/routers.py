@@ -88,7 +88,32 @@ def accept_transfer(
     bike.state = BikeState.TRANSFERABLE
     bike.claimed_date = datetime.datetime.now()
     transfer.state = BikeTransferState.CLOSED
-    bike.save()
-    transfer.save()
 
-    return bike and transfer
+    return bike.save() and transfer.save()
+
+@router.post('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
+def retract_transfer(
+    id: uuid.UUID,
+    request: Request,
+    sender: BikeOwner = Depends(authenticated_request)
+    ):
+    transfer_in_db: BikeTransfer = request.app.collections["transfers"].find_one({"_id": id})
+
+    #check transfer exist and pending
+    if not transfer_in_db:
+        #throw up
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No such transfer found")
+    
+    transfer = BikeTransfer(**transfer_in_db)
+    #check transfer pending
+    if not transfer.state == BikeTransferState.PENDING:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
+
+    #check sender is original transferer 
+    if not sender.id == transfer.sender:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
+    
+    #update transfer and save
+    transfer.state == BikeTransferState.CLOSED
+
+    return transfer.save()
