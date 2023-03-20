@@ -6,6 +6,7 @@ from src.notifications.sms import send_sms
 from src.storage.aws import save_file
 from src.bikes.dependencies import *
 from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind, BikeOwner, BikeState
+from src.storage.models import ModelWithImage
 
 router = APIRouter(
     tags=['bikes'], 
@@ -62,11 +63,11 @@ def register_bike(
         'kind': kind,
         'brand': brand,
         'color': color,
-        'images': [save_file(image) for image in images if images],
-        'receipts': [save_file(receipt) for receipt in receipts if receipts]
     }
 
     bike = Bike(**bike_info)
+    bike.images.upload_multiple(images)
+    bike.receipt.upload(receipt)
 
     send_sms(
         msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}", 
@@ -91,8 +92,6 @@ def remove_bike(id: uuid.UUID, request: Request, response: Response):
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
 
-
-
 @router.post("/claim/{claim_token}", description="Claim a new bike")
 def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depends(authenticated_request)) -> Bike:
     bike_in_db = request.app.collections["bikes"].find_one({"claim_token": claim_token})
@@ -113,4 +112,19 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depe
     bike.save()
     
     return bike
-    
+
+@router.post('/upload-test', description="Test upload", status_code=status.HTTP_201_CREATED)
+def upload_test(file: UploadFile = File()):
+
+    model = ModelWithImage()
+    model.image.upload(file)
+    model.save()
+
+    return {'success': True}
+
+@router.post('/fetch-resource-with-image', description="Test fetch of resource with image", status_code=status.HTTP_201_CREATED)
+def get_models_with_file(request: Request):
+    all_files = list(request.app.collections['testfiles'].find())
+    converted_files = [ModelWithImage(**file) for file in all_files]
+    as_dict = [file.dict() for file in converted_files]
+    return as_dict

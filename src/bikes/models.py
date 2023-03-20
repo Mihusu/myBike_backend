@@ -1,11 +1,10 @@
 import datetime
-from enum import Enum
 import uuid
-from fastapi import Form
-from pydantic import BaseModel, Field, PrivateAttr, validator
-import re as regex
+from enum import Enum
+from pydantic import Field, PrivateAttr
 
 from src.models import Entity
+from src.storage.models import S3File, S3Files
 
 class BikeGender(str, Enum):
     MALE = "male",
@@ -62,16 +61,16 @@ class Bike(Entity):
     gender: BikeGender
     is_electric: bool
     kind: BikeKind
-    brand: str # Should be a model
+    brand: str                          # Should probably be a model but is fine for now
     color: BikeColor
-    images: list[str] | None # Should be its own model or something else
-    receipt: list[str] | None # Same as images
+    images: S3File | None = S3File.field(path='test-images', allowed_content_types=['image/png'])
+    receipt: list[str] | None           # Same as images
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
-    state: BikeState = BikeState.UNCLAIMED # Figure out how to handle these states
+    state: BikeState = BikeState.UNCLAIMED      # Figure out how to handle these states
     
 # ___ Changelog ___
 # TODO: Add testing framework
