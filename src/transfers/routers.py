@@ -49,7 +49,6 @@ def create_transfer(
         'sender': sender.id, 
         'receiver': receiver_in_db["_id"],
         'bike_id': bike_id,
-        
     }
 
     transfer = BikeTransfer(**transfer_info)
@@ -75,7 +74,8 @@ def accept_transfer(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is reported stolen. Transfer disallowed")
 
     # Checks the transfer state is in transfer and is pending
-    transfer = BikeTransfer(**transfer_id)
+    transfer_in_db = request.app.collections["transfers"].find_one({"_id": transfer_id})
+    transfer = BikeTransfer(**transfer_in_db)
     if bike.state != BikeState.IN_TRANSFER or transfer.state != BikeTransferState.PENDING:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is not in transfer")
     
@@ -86,10 +86,11 @@ def accept_transfer(
     # This hands over the ownership to the sender of the request
     bike.owner = requester.id
     bike.state = BikeState.TRANSFERABLE
-    bike.claimed_date = datetime.datetime.now()
     transfer.state = BikeTransferState.CLOSED
 
-    return bike.save(), transfer.save()
+    bike.save()
+
+    return transfer.save()
 
 @router.post('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
 def retract_transfer(
