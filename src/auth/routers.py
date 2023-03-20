@@ -21,7 +21,7 @@ router = APIRouter(
 
 class Settings(BaseModel):
     authjwt_secret_key = config['JWT_SECRET']
-    authjwt_access_token_expires: datetime.timedelta = datetime.timedelta(minutes=30)
+    authjwt_access_token_expires: datetime.timedelta = datetime.timedelta(minutes=int(config['JWT_EXPIARY_TIME_MINS']))
     
 
 @AuthJWT.load_config
