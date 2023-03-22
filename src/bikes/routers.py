@@ -110,7 +110,7 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depe
     
     return bike
 
-@router.get(
+@router.put(
     '/{id}/reportstolen', 
     description="Report a bike stolen", 
     status_code=status.HTTP_200_OK
