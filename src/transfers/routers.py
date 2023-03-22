@@ -1,12 +1,10 @@
 import uuid
 import datetime
-from fastapi import APIRouter, Body, Depends, Form, Request, Response, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Body, Depends, Form, Request, HTTPException, status
 from src.bikes.models import Bike, BikeOwner, BikeState
 from src.auth.dependencies import authenticated_request
-from src.notifications.sms import send_sms
-from src.storage.aws import save_file
 from src.transfers.models import BikeTransfer, BikeTransferState
-from src.transfers.dependencies import bike_with_id_exists, transfer_with_id_exists
+from src.transfers.dependencies import bike_with_id_exists
 
 router = APIRouter(
     tags=['transfers'],
@@ -59,7 +57,42 @@ def create_transfer(
     # Return transfer object to request sender
     return transfer.save()
 
-@router.post('/{id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.get('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
+def retract_transfer(
+    transfer_id: uuid.UUID,
+    request: Request,
+    requester: BikeOwner = Depends(authenticated_request)
+    ):
+    
+    transfer_in_db: BikeTransfer = request.app.collections["transfers"].find_one({"_id": transfer_id})
+    transfer = BikeTransfer(**transfer_in_db)
+
+    # Check transfer exist
+    if not transfer_in_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No such transfer found")
+    
+    # Check transfer pending
+    if not transfer.state == BikeTransferState.PENDING:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
+
+    # Check sender is original transferer 
+    if not requester.id == transfer.sender:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Requester id does not match original transferer. Cannot decline transfer")
+        
+    # Update transfer state
+    transfer.state = BikeTransferState.CLOSED
+    transfer.closed_at = datetime.datetime.now()
+    
+    # Update bike state
+    bike_in_db: Bike = request.app.collections["bikes"].find_one({"_id": transfer.bike_id})
+    bike = Bike(**bike_in_db)
+    bike.state = BikeState.TRANSFERABLE
+
+    bike.save()
+
+    return transfer.save()
+
+@router.get('/{id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def accept_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
@@ -101,42 +134,7 @@ def accept_transfer(
 
     return transfer.save()
 
-@router.post('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
-def retract_transfer(
-    transfer_id: uuid.UUID,
-    request: Request,
-    requester: BikeOwner = Depends(authenticated_request)
-    ):
-    
-    transfer_in_db: BikeTransfer = request.app.collections["transfers"].find_one({"_id": transfer_id})
-    transfer = BikeTransfer(**transfer_in_db)
-
-    # Check transfer exist
-    if not transfer_in_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No such transfer found")
-    
-    # Check transfer pending
-    if not transfer.state == BikeTransferState.PENDING:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Transfer is not pending. Cannot decline transfer")
-
-    # Check sender is original transferer 
-    if not requester.id == transfer.sender:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Requester id does not match original transferer. Cannot decline transfer")
-        
-    # Update transfer state
-    transfer.state = BikeTransferState.CLOSED
-    transfer.closed_at = datetime.datetime.now()
-    
-    # Update bike state
-    bike_in_db: Bike = request.app.collections["bikes"].find_one({"_id": transfer.bike_id})
-    bike = Bike(**bike_in_db)
-    bike.state = BikeState.TRANSFERABLE
-
-    bike.save()
-
-    return transfer.save()
-
-@router.post('/{id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.get('/{id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def reject_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
