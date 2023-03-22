@@ -1,6 +1,6 @@
 import uuid
 import datetime
-from fastapi import APIRouter, Body, Depends, Form, Request, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
 from src.bikes.models import Bike, BikeOwner, BikeState
 from src.auth.dependencies import authenticated_request
 from src.transfers.models import BikeTransfer, BikeTransferState
@@ -57,7 +57,7 @@ def create_transfer(
     # Return transfer object to request sender
     return transfer.save()
 
-@router.get('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
+@router.put('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
 def retract_transfer(
     transfer_id: uuid.UUID,
     request: Request,
@@ -92,7 +92,7 @@ def retract_transfer(
 
     return transfer.save()
 
-@router.get('/{id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.put('/{id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def accept_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
@@ -134,7 +134,7 @@ def accept_transfer(
 
     return transfer.save()
 
-@router.get('/{id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.put('/{id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def reject_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
