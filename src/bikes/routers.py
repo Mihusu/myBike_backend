@@ -12,7 +12,6 @@ router = APIRouter(
     prefix='/bikes'
 )
 
-
 @router.get(
     '/me',
     description="Retrieve a list of owned bikes"
@@ -94,7 +93,7 @@ def remove_bike(id: uuid.UUID, request: Request, response: Response):
 def claim_bike(request: Request, claim_token: uuid.UUID, user : BikeOwner = Depends(authenticated_request)) -> Bike:
     bike_in_db = request.app.collections["bikes"].find_one({"claim_token": claim_token})
     if not bike_in_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike with ID {id} not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Invalid claim code")
     
     bike = Bike(**bike_in_db)
     
