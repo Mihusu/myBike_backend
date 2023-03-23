@@ -23,15 +23,20 @@ def create_transfer(
     receiver_in_db = request.app.collections["bike_owners"].find_one({"phone_number": receiver_phone_number})
     if not receiver_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike owner with phone number {receiver_phone_number} not found")
-    
+        
     # Check bike exists
     # is done in dependencies
 
     # Check sender owns bike
-    bike_owner = request.app.collections["bikes"].find_one({"owner": sender.id})
-    if not bike_owner:
+    bike_owner_in_db = request.app.collections["bikes"].find_one({"owner": sender.id})
+    if not bike_owner_in_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike owner with phone number {sender.phone_number} does not own bike with id {bike_id}")
     
+    # Check sender is not also receiver
+    receiver = BikeOwner(**receiver_in_db)
+    if sender.id == receiver.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"System does not allow transferral of a bike to yourself")
+
     # Check bike not stolen
     bike_in_db = request.app.collections["bikes"].find_one({"_id": bike_id})
     bike = Bike(**bike_in_db)
