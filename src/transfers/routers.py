@@ -5,34 +5,13 @@ from src.bikes.models import Bike, BikeOwner, BikeState
 from src.auth.dependencies import authenticated_request
 from src.transfers.models import BikeTransfer, BikeTransferState
 from src.transfers.dependencies import bike_with_id_exists
-from src.transfers.responses import ActivityResponse
 
 router = APIRouter(
     tags=['transfers'],
     prefix='/transfers'
 )
 
-@router.get('/activities', summary="Get all activities for a user", status_code=status.HTTP_200_OK)
-def get_activities(request: Request, user: BikeOwner = Depends(authenticated_request)) -> ActivityResponse:
-    
-    outgoing_requests = list(request.app.collections['transfers'].find({'sender' : user.id, 'state' : BikeTransferState.PENDING}))
-    incomming_requests = list(request.app.collections['transfers'].find({'receiver' : user.id, 'state' : BikeTransferState.PENDING}))
-    completed_requests = list(request.app.collections['transfers'].find({
-        '$or' : [
-            { 'sender' : user.id }, 
-            { 'receiver' : user.id }
-        ],
-        '$or' : [
-            { 'state' : BikeTransferState.ACCEPTED }, 
-            { 'state' : BikeTransferState.DECLINED }
-        ]
-    }))
-    
-    return ActivityResponse(
-        outgoing_transfer_requests=outgoing_requests,
-        incomming_transfer_requests=incomming_requests,
-        completed_transfers=completed_requests
-    )
+
 
 @router.post('/', description="creating a bike transfer", status_code=status.HTTP_201_CREATED)
 def create_transfer(
