@@ -64,7 +64,7 @@ def create_transfer(
     # Return transfer object to request sender
     return transfer.save()
 
-@router.put('/{id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
+@router.put('/{transfer_id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
 def retract_transfer(
     transfer_id: uuid.UUID,
     request: Request,
@@ -99,7 +99,7 @@ def retract_transfer(
 
     return transfer.save()
 
-@router.put('/{id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.put('/{transfer_id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def accept_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
@@ -141,7 +141,7 @@ def accept_transfer(
 
     return transfer.save()
 
-@router.put('/{id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
+@router.put('/{transfer_id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def reject_transfer(
     transfer_id: uuid.UUID,
     request: Request, 
