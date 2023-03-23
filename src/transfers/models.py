@@ -9,7 +9,8 @@ from src.models import Entity
 
 class BikeTransferState(str, Enum):
     PENDING = "pending",
-    CLOSED = "closed"
+    ACCEPTED = "accepted",
+    DECLINED = "declined"
 
 class BikeTransfer(Entity):
 

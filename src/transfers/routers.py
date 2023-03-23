@@ -85,7 +85,7 @@ def retract_transfer(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Requester id does not match original transferer. Cannot decline transfer")
         
     # Update transfer state
-    transfer.state = BikeTransferState.CLOSED
+    transfer.state = BikeTransferState.DECLINED
     transfer.closed_at = datetime.datetime.now()
     
     # Update bike state
@@ -132,7 +132,7 @@ def accept_transfer(
     # This hands over the ownership to the sender of the request
     bike.owner = requester.id
     bike.state = BikeState.TRANSFERABLE
-    transfer.state = BikeTransferState.CLOSED
+    transfer.state = BikeTransferState.ACCEPTED
     transfer.closed_at = datetime.datetime.now()
 
     bike.save()
@@ -164,7 +164,7 @@ def reject_transfer(
     
     # This does not hand over the ownership to the sender of the request
     bike.state = BikeState.TRANSFERABLE
-    transfer.state = BikeTransferState.CLOSED
+    transfer.state = BikeTransferState.DECLINED
     transfer.closed_at = datetime.datetime.now()
 
     bike.save()
