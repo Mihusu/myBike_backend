@@ -1,16 +1,36 @@
 import uuid
 import datetime
 from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
+
 from src.bikes.models import Bike, BikeOwner, BikeState
 from src.auth.dependencies import authenticated_request
 from src.transfers.models import BikeTransfer, BikeTransferState
 from src.transfers.dependencies import bike_with_id_exists
+from src.transfers.utils import expand_transfer
+
 
 router = APIRouter(
     tags=['transfers'],
     prefix='/transfers'
 )
 
+
+@router.get('/{transfer_id}', summary="Get a single transfer", status_code=status.HTTP_200_OK)
+def get_transfer(request: Request, transfer_id: uuid.UUID, user: BikeOwner = Depends(authenticated_request)):
+    
+    transfer_in_db = request.app.collections['transfers'].find_one({'_id' : transfer_id})
+    
+    if not transfer_in_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No such transfer found")
+    
+    transfer = BikeTransfer(**transfer_in_db)
+    
+    # Check that the user is allowed to see the transfer
+    permission_to_view = transfer.sender == user.id or transfer.receiver == user.id
+    if not permission_to_view:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"View of transfer not allowed")
+    
+    return expand_transfer(transfer, request)
 
 
 @router.post('/', description="creating a bike transfer", status_code=status.HTTP_201_CREATED)
