@@ -16,6 +16,7 @@ class BikeKind(str, Enum):
     CITY = "city",
     MOUNTAIN = "mountain",
     ROAD = "road",
+    GRAVEL = "gravel",
     RACE = "race",
     CARGO = "cargo",
     HYBRID = "hybrid",
