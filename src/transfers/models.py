@@ -7,6 +7,7 @@ import re as regex
 
 from src.models import Entity
 
+
 class BikeTransferState(str, Enum):
     PENDING = "pending",
     ACCEPTED = "accepted",
