@@ -18,7 +18,7 @@ router = APIRouter(
 def get_activities(request: Request, user: BikeOwner = Depends(authenticated_request)):
     
     outgoing_requests  = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'sender' : user.id, 'state' : BikeTransferState.PENDING})]
-    incomming_requests = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'receiver' : user.id, 'state' : BikeTransferState.PENDING})]
+    incoming_requests = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'receiver' : user.id, 'state' : BikeTransferState.PENDING})]
     completed_requests = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({
         '$or' : [
             { 'sender' : user.id }, 
@@ -30,9 +30,9 @@ def get_activities(request: Request, user: BikeOwner = Depends(authenticated_req
         ]
     })]
     
-    return {
-        'alerts' : len(outgoing_requests) + len(incomming_requests),
-        'outgoing_transfer_requests' : outgoing_requests,
-        'incomming_transfer_requests' : incomming_requests,
-        'completed_transfers' : completed_requests
-    }
+    return ActivityResponse(
+        alerts=len(outgoing_requests) + len(incoming_requests),
+        outgoing_transfer_requests=outgoing_requests,
+        incoming_transfer_requests=incoming_requests,
+        completed_transfers=completed_requests
+    )
