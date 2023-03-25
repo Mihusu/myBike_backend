@@ -30,9 +30,9 @@ def get_activities(request: Request, user: BikeOwner = Depends(authenticated_req
         ]
     })]
     
-    return ActivityResponse(
-        alerts=len(outgoing_requests) + len(incoming_requests),
-        outgoing_transfer_requests=outgoing_requests,
-        incoming_transfer_requests=incoming_requests,
-        completed_transfers=completed_requests
-    )
+    return {
+        'alerts' : len(outgoing_requests) + len(incoming_requests),
+        'outgoing_transfer_requests' : outgoing_requests,
+        'incoming_transfer_requests' : incoming_requests,
+        'completed_transfers' : completed_requests
+    }
