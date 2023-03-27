@@ -40,7 +40,7 @@ def authenticate(request: Request, phone_number: str = Body(), password: str = B
     # Verify password
     valid_password = bcrypt.checkpw(
         password=password.encode(encoding="utf-8"),  #TODO: Check for right conversion between str & bytes
-        hashed_password=found_user['hash'].encode(encoding="utf-8")
+        hashed_password=found_user['hash']
     )
     if not valid_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid credentials")
