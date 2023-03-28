@@ -84,7 +84,9 @@ def create_transfer(
     # Return transfer object to request sender
     return transfer.save()
 
-@router.put('/{transfer_id}/retract', description="retracting a bike transfer", status_code=status.HTTP_200_OK)
+@router.put('/{transfer_id}/retract',
+            description="retracting a bike transfer",
+            status_code=status.HTTP_202_ACCEPTED)
 def retract_transfer(
     transfer_id: uuid.UUID,
     request: Request,
@@ -105,19 +107,20 @@ def retract_transfer(
     # Check sender is original transferer 
     if not requester.id == transfer.sender:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Requester id does not match original transferer. Cannot decline transfer")
-        
-    # Update transfer state
-    transfer.state = BikeTransferState.DECLINED
-    transfer.closed_at = datetime.datetime.now()
     
     # Update bike state
     bike_in_db: Bike = request.app.collections["bikes"].find_one({"_id": transfer.bike_id})
     bike = Bike(**bike_in_db)
     bike.state = BikeState.TRANSFERABLE
-
     bike.save()
 
-    return transfer.save()
+    delete_result = request.app.collections["transfers"].delete_one({"_id": transfer_id})
+    print(delete_result)
+    if not delete_result.deleted_count == 1:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"failed to delete transfer with id {transfer_id}")
+    
+    return {"message": "transfer deleted successfully"}
+    
 
 @router.put('/{transfer_id}/accept', description="Accepts a bike transfer", status_code=status.HTTP_202_ACCEPTED)
 def accept_transfer(
