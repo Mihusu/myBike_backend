@@ -5,7 +5,8 @@ from src.auth.dependencies import authenticated_request
 from src.notifications.sms import send_sms
 from src.storage.aws import save_file
 from src.bikes.dependencies import *
-from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind, BikeOwner, BikeState
+from src.bikes.models import Bike, BikeColor, BikeGender, BikeKind, BikeState
+from src.owners.models import BikeOwner
 
 router = APIRouter(
     tags=['bikes'], 

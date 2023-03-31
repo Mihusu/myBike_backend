@@ -1,6 +1,7 @@
 from fastapi import Request
 
-from src.bikes.models import Bike, BikeOwner
+from src.bikes.models import Bike
+from src.owners.models import BikeOwner
 from src.transfers.models import BikeTransfer
 
 

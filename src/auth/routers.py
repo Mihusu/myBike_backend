@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
-from src.bikes.models import BikeOwner
+from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import authenticated_request, valid_token, phone_number_not_registered
 from src.auth.models import BikeOwnerSession
@@ -53,10 +53,15 @@ def authenticate(request: Request, phone_number: str = Body(), password: str = B
 @router.post('/register/me', summary="Register a new bike owner")
 def register_bike_owner(request: Request, phone_number: str = Depends(phone_number_not_registered), password: str = Body()):
     
-    #1. Check that phone number not already exists
+    MIN_PASSWORD_LEN = 12
+    
+    #1. Check that phone number does not already exists
+    #1.25 Validate password against OWASP standards
     #1.5 Hash and salt password
     #2. Create and save new BikeOwnerSessiom object
     #3. Send sms with otp to phone_number
+    if len(password) < MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Weak password. Password must be equal or larger than 12 characters")
     
     hashed_password = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
     

@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.exceptions import JOSEError
 
-from src.bikes.models import BikeOwner
+from src.owners.models import BikeOwner
 
 security = HTTPBearer(description="Paste in your access token here to be used in subsequent requests")
 

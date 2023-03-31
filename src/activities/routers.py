@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Request, status
 
 from src.activities.responses import ActivityResponse
 from src.auth.dependencies import authenticated_request
-from src.bikes.models import Bike, BikeOwner
+from src.bikes.models import Bike
+from src.owners.models import BikeOwner
 from src.transfers.models import BikeTransfer, BikeTransferState
 from src.transfers.utils import expand_transfer
 
@@ -11,7 +12,6 @@ router = APIRouter(
     tags=['activities'],
     prefix='/activities'
 )
-
 
 
 @router.get('/', summary="Get all activities for a user", status_code=status.HTTP_200_OK)

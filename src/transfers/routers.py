@@ -2,7 +2,8 @@ import uuid
 import datetime
 from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
 
-from src.bikes.models import Bike, BikeOwner, BikeState
+from src.bikes.models import Bike, BikeState
+from src.owners.models import BikeOwner
 from src.auth.dependencies import authenticated_request
 from src.transfers.models import BikeTransfer, BikeTransferState
 from src.transfers.dependencies import bike_with_id_exists

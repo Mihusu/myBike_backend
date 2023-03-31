@@ -3,7 +3,7 @@ import datetime
 from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
 from jose import JOSEError
 
-from src.bikes.models import BikeOwner
+from src.owners.models import BikeOwner
 from src.auth.dependencies import authenticated_request
 
 router = APIRouter(
