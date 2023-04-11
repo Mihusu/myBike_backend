@@ -32,6 +32,10 @@ def get_config():
 @router.post('/token', summary="Authenticate to get an access token")
 def authenticate(request: Request, phone_number: str = Body(), password: str = Body(), Authorize: AuthJWT = Depends()):
     
+    # Look up the device
+    # If device is blacklisted return error message directly
+    # else proceed
+    
     # Verify user exists
     found_user = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if not found_user:
@@ -42,8 +46,15 @@ def authenticate(request: Request, phone_number: str = Body(), password: str = B
         password=password.encode(encoding="utf-8"),  #TODO: Check for right conversion between str & bytes
         hashed_password=found_user['hash']
     )
+    
     if not valid_password:
+        # Count password attempt +1 for this device
+        # Find the existing AccessSession from this device
+        # if no session, then create a session
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid credentials")
+    
+    # If the device is new (not in whitelist), then send back an OTP
+    # else just send back the access/refresh tokens
     
     return {
         "access_token": Authorize.create_access_token(subject=str(found_user['_id'])),
