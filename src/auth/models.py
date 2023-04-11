@@ -24,3 +24,12 @@ class BikeOwnerSession(Entity):
     hash: bytes
     phone_number: str
     expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))
+
+class ResetpasswordSession(Entity):
+    
+    _COLLECTION_NAME = PrivateAttr(default='resetpassword_sessions')
+    
+    phone_number: str           # Phone number of account trying to reset password
+    otp: str = Field(default_factory=generate_otp)
+    verified : bool = False     # Only when this flag is set to true allows for a password change
+    expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))

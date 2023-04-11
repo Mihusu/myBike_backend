@@ -2,17 +2,18 @@ import datetime
 import uuid
 import bcrypt
 from dotenv import dotenv_values
-from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
+from fastapi import APIRouter, Body, HTTPException, Depends, Query, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import authenticated_request, valid_token, phone_number_not_registered
-from src.auth.models import BikeOwnerSession
+from src.auth.models import BikeOwnerSession, ResetpasswordSession
 
 
 config = dotenv_values(".env")
+
 
 router = APIRouter(
     tags=['authentication'], 
@@ -116,11 +117,69 @@ def verify_otp(request: Request, otp: str = Body(), session_id: uuid.UUID = Body
         "refresh_token": Authorize.create_refresh_token(subject=str(bike_owner.id))
     }
 
-# To be removed once demonstrated
-@router.get('/protected', summary="Example of a protected route")
-def protected_route(token: str = Depends(valid_token)):
-    return {"access_granted", token}
-
-@router.get('/protected-with.user', summary="Example of a protected route that gets the user profile")
-def protected_route_user(user: BikeOwner = Depends(authenticated_request)):
-    return user
+@router.put('/reset-password/request', summary="Request a password reset in case of lost or compromised account")
+def request_password_reset(request: Request, phone_number: str = Query()):
+    
+    # Find the user with given phonenumber
+    owner = request.app.collections['bike_owners'].find_one({'phone_number' : phone_number})
+    if not owner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bike owner with phonenumber '{phone_number}' not found")
+    
+    # Start a new password reset session with the owner
+    session = ResetpasswordSession(phone_number=phone_number)
+    session.save()
+    # Send an sms with a OTP to the phonenumber saying
+    # that they are trying to reset their password
+    send_sms(to = phone_number, msg=f"Hej\nDin nulstillingskode er: {session.otp}\nDet kan ikke lade sig gøre at nulstille adgangskoden uden denne kode.")
+    
+    return {
+        'session_id' : session.id,
+        'expires_in' : session.expires_in
+    }
+    
+@router.put('/reset-password/verify', summary="Verify the OTP comming from a password reset request", status_code=200)
+def verify_password_reset(request: Request, session_id: uuid.UUID = Body(), otp: str = Body()):
+    
+    session_doc = request.app.collections['resetpassword_sessions'].find_one({'_id' : session_id})
+    if not session_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
+    
+    session = ResetpasswordSession(**session_doc)
+    
+    if session.expires_in < datetime.datetime.now():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Session '{session_id}' expired at {session.expires_in}")
+    
+    if not session.otp == otp:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid OTP for session '{session_id}'")
+    
+    # All checks okay. Set the session to be verified
+    session.verified = True
+    session.save()
+    
+@router.put('/reset-password/confirm', summary="Changes an accounts password", status_code=200)
+def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), new_password: str = Body()):
+    
+    session_doc = request.app.collections['resetpassword_sessions'].find_one({'_id' : session_id})
+    if not session_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session '{session_id}' not found")
+    
+    session = ResetpasswordSession(**session_doc)
+    if not session.verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Session '{session_id}' is missing verification")
+    
+    # Session is verified, change the password of the account.
+    owner_doc = request.app.collections['bike_owners'].find_one({'phone_number' : session.phone_number})
+    
+    owner      = BikeOwner(**owner_doc)
+    owner.hash = bcrypt.hashpw(new_password.encode(encoding="utf-8"), bcrypt.gensalt())
+    owner.save()
+    
+    send_sms(msg="Din adgangskode er blevet nulstillet", to=session.phone_number)
+    
+    # Remove the reset password session to prevent future access to this verified session.
+    request.app.collections['resetpassword_sessions'].delete_one({'_id' : session_id})
+    
+    
+    
+# TODO: Make a dependency for trimming phone number
+# TODO: Make a dependency for securing that passwords meets password requirements
