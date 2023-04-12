@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
-from src.auth.dependencies import phone_number_not_registered
+from src.auth.dependencies import strong_password, phone_number_not_registered
 from src.dependencies import sanitize_phone_number
 from src.auth.models import BikeOwnerSession, ResetpasswordSession
 
@@ -64,17 +64,7 @@ def authenticate(request: Request, phone_number: str = Body(), password: str = B
     }
 
 @router.post('/register/me', summary="Register a new bike owner")
-def register_bike_owner(request: Request, phone_number: str = Depends(phone_number_not_registered), password: str = Body()):
-    
-    MIN_PASSWORD_LEN = 12
-    
-    #1. Check that phone number does not already exists
-    #1.25 Validate password against OWASP standards
-    #1.5 Hash and salt password
-    #2. Create and save new BikeOwnerSessiom object
-    #3. Send sms with otp to phone_number
-    if len(password) < MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Weak password. Password must be equal or larger than 12 characters")
+def register_bike_owner(request: Request, phone_number: str = Depends(phone_number_not_registered), password: str = Depends(strong_password)):
     
     hashed_password = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
     
@@ -158,7 +148,7 @@ def verify_password_reset(request: Request, session_id: uuid.UUID = Body(), otp:
     session.save()
     
 @router.put('/reset-password/confirm', summary="Changes an accounts password", status_code=200)
-def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), new_password: str = Body()):
+def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), password: str = Depends(strong_password)):
     
     session_doc = request.app.collections['resetpassword_sessions'].find_one({'_id' : session_id})
     if not session_doc:
@@ -172,7 +162,7 @@ def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), new
     owner_doc = request.app.collections['bike_owners'].find_one({'phone_number' : session.phone_number})
     
     owner      = BikeOwner(**owner_doc)
-    owner.hash = bcrypt.hashpw(new_password.encode(encoding="utf-8"), bcrypt.gensalt())
+    owner.hash = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
     owner.save()
     
     send_sms(msg="Din adgangskode er blevet nulstillet", to=session.phone_number)
