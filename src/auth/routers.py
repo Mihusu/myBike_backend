@@ -2,13 +2,14 @@ import datetime
 import uuid
 import bcrypt
 from dotenv import dotenv_values
-from fastapi import APIRouter, Body, HTTPException, Depends, Query, Request, status
+from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
-from src.auth.dependencies import authenticated_request, valid_token, phone_number_not_registered
+from src.auth.dependencies import phone_number_not_registered
+from src.dependencies import sanitize_phone_number
 from src.auth.models import BikeOwnerSession, ResetpasswordSession
 
 
@@ -118,7 +119,7 @@ def verify_otp(request: Request, otp: str = Body(), session_id: uuid.UUID = Body
     }
 
 @router.put('/reset-password/request', summary="Request a password reset in case of lost or compromised account")
-def request_password_reset(request: Request, phone_number: str = Query()):
+def request_password_reset(request: Request, phone_number: str = Depends(sanitize_phone_number)):
     
     # Find the user with given phonenumber
     owner = request.app.collections['bike_owners'].find_one({'phone_number' : phone_number})
