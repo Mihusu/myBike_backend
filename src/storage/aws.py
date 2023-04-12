@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import logging
 from dotenv import dotenv_values
 import boto3
@@ -16,7 +16,7 @@ s3_client = boto3.client(
 
 def save_file(file: UploadFile):
     
-    object_name = str(datetime.now()) + file.filename
+    object_name = str(datetime.datetime.now()) + file.filename
 
     try:
         s3_client.upload_fileobj(file.file, config['AWS_BUCKET_NAME'], object_name)

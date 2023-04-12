@@ -1,7 +1,6 @@
-
 import datetime
 import secrets
-from pydantic import Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
 from src.models import Entity
 
@@ -33,3 +32,26 @@ class ResetpasswordSession(Entity):
     otp: str = Field(default_factory=generate_otp)
     verified : bool = False     # Only when this flag is set to true allows for a password change
     expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))
+
+class AccessSession(Entity):
+
+    _COLLECTION_NAME = PrivateAttr(default='access_sessions')
+
+    ip_address: str
+    phone_number: str       # Phone number of owner trying to access
+    login_attempts: int = 0
+    otp: str = Field(default_factory=generate_otp)
+    expires_at: datetime.datetime = None
+    #last_login_attempt_at: datetime
+
+
+class Device(BaseModel):
+    ip_address : str
+    name       : str | None = None
+
+
+class DeviceList(BaseModel):
+    white_list: list[Device] = []
+    black_list: list[Device] = []
+
+

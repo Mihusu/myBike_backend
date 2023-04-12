@@ -2,6 +2,7 @@ import datetime
 from pydantic import PrivateAttr
 
 from src.models import Entity
+from src.auth.models import DeviceList
 
 
 class BikeOwner(Entity):
@@ -11,3 +12,4 @@ class BikeOwner(Entity):
     phone_number: str   # TODO: Maybe hash this at some point to avoid possible leakage
     hash: bytes
     created_at: datetime.datetime = datetime.datetime.now()
+    devices: DeviceList = DeviceList()
