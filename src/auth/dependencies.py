@@ -38,3 +38,19 @@ def phone_number_not_registered(request: Request, phone_number: str = Body()):
         raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phone number '{phone_number}'")
     
     return phone_number
+
+def strong_password(password: str = Body()):
+    """ 
+    Checks that the given password meets our requirements for a strong password
+    
+    Current requirements for strong password is:
+        * A minimum of 12 characters
+        
+    Last changed: apr.12.2023 - jsaad
+    """
+    MIN_PASSWORD_LEN = 12
+    
+    if not len(password) >= MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=400, detail=f"Weak password. Password must contain 12 characters or above")
+    
+    return password
