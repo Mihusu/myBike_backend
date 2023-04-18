@@ -2,7 +2,7 @@ import datetime
 import secrets
 from typing import Any
 import uuid
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field, PrivateAttr
 
 from src.models import Entity
 
@@ -31,24 +31,14 @@ class TrustDeviceSession(Session2FA):
     ip_address : str
     
 
-class BikeOwnerSession(Entity):
-    
-    _COLLECTION_NAME = PrivateAttr(default='bikeowner_sessions')
-    
-    otp: str = Field(default_factory=generate_otp)      
+class BikeOwnerRegistrationSession(Session2FA):    
     hash: bytes
     phone_number: str
-    expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))
-
-
-class ResetpasswordSession(Entity):
     
-    _COLLECTION_NAME = PrivateAttr(default='resetpassword_sessions')
-    
+
+class ResetPasswordSession(Session2FA):    
     phone_number: str           # Phone number of account trying to reset password
-    otp: str = Field(default_factory=generate_otp)
     verified : bool = False     # Only when this flag is set to true allows for a password change
-    expires_in : datetime.datetime = Field(default_factory=lambda : datetime.datetime.now() + datetime.timedelta(minutes=5))
 
 
 class AccessSession(Entity):
@@ -61,28 +51,3 @@ class AccessSession(Entity):
     otp: str = Field(default_factory=generate_otp)
     cooldown_expires_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     #last_login_attempt_at: datetime
-
-
-class Device(BaseModel):
-    ip_address : str
-    name       : str | None = None
-
-
-class DeviceList(BaseModel):
-    white_list: list[Device] = []
-    black_list: list[Device] = []
-    
-    def is_blacklisted(self, ip_addr: str):
-        for device in self.black_list: 
-            if device.ip_address == ip_addr:
-                return True
-        return False
-    
-    def is_known(self, ip_addr: str):
-        for device in self.white_list:
-            if device.ip_address == ip_addr:
-                return True
-        return False
-    
-
-
