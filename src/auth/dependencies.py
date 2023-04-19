@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from dotenv import dotenv_values
 from fastapi import Body, HTTPException, Depends, Request, status
@@ -9,7 +10,32 @@ from src.owners.models import BikeOwner
 
 security = HTTPBearer(description="Paste in your access token here to be used in subsequent requests")
 
+
 config = dotenv_values(".env")
+
+
+class Verify2FASession:
+    def __init__(self, name: str):
+         self.name = name
+
+    def __call__(self, request: Request, session_id: uuid.UUID = Body(), otp: str = Body()):
+        session_doc = request.app.collections['2fa_sessions'].find_one({'_id': session_id})
+        if not session_doc:
+            raise HTTPException(
+                status_code=400, detail=f"Non-existing session with session id: {session_id}")
+
+        if not session_doc['name'] == self.name:
+            raise HTTPException(
+                status_code=403, detail=f"Verifying wrong kind of session. Verifying session with name '{self.name}' but got session '{session_doc['name']}'")
+            
+        if datetime.datetime.now() > session_doc['expires_at']:
+            raise HTTPException(
+                status_code=403, detail=f"Session expired at: {session_doc['expires_at']}")
+
+        if not otp == session_doc['otp']:
+            raise HTTPException(status_code=403, detail=f"Invalid OTP")
+        
+        return session_doc
 
 def valid_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
@@ -54,3 +80,7 @@ def strong_password(password: str = Body()):
         raise HTTPException(status_code=400, detail=f"Weak password. Password must contain 12 characters or above")
     
     return password
+
+
+        
+    
