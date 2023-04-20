@@ -11,9 +11,9 @@ from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
 from src.dependencies import sanitize_phone_number
-from src.auth.models import BikeOwnerSession, ResetpasswordSession, AccessSession, Device, TrustDeviceSession
+from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, AuthCooldownResponse
-from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession
+from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         current_ac_session = new_ac_session
     else:
         current_ac_session = AccessSession(**ac_session_doc)
-
+ 
     # Check if user should get a cooldown penalty
     on_cooldown = current_ac_session.cooldown_expires_at > datetime.datetime.now()
     if on_cooldown:
