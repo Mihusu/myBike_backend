@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from bikes.models import FoundBikeReport
+from src.bikes.models import FoundBikeReport
 
 from src.transfers.models import BikeTransfer
 

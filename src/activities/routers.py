@@ -17,8 +17,7 @@ router = APIRouter(
 @router.get('/', summary="Get all activities for a user", status_code=status.HTTP_200_OK)
 def get_activities(request: Request, user: BikeOwner = Depends(authenticated_request)):
 
-    discoveries = list(
-        request.app.collections["discoveries"].find({'bike_owner': user.id}))
+    discoveries = list(request.app.collections["discoveries"].find({'bike_owner': user.id}))
 
     outgoing_requests = [expand_transfer(BikeTransfer(**transfer), request)
                          for transfer in request.app.collections['transfers'].find({'sender': user.id, 'state': BikeTransferState.PENDING})]
@@ -42,5 +41,5 @@ def get_activities(request: Request, user: BikeOwner = Depends(authenticated_req
         'outgoing_transfer_requests': outgoing_requests,
         'incoming_transfer_requests': incoming_requests,
         'completed_transfers': completed_requests,
-        'discoveries':  discoveries
+        'discoveries': discoveries
     }

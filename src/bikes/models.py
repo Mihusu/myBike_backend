@@ -48,8 +48,9 @@ class BikeState(str, Enum):
 class FoundBikeReport(Entity):
 
     _COLLECTION_NAME = PrivateAttr(default='discoveries')
+    bike_owner: uuid.UUID
     frame_number: str
-    street_name: str
+    address: str
     comment: str
     image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
                                         'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
