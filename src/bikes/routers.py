@@ -69,6 +69,7 @@ def get_bike_by_frame_number(request: Request, frame_number: str) -> Bike:
     dependencies=[Depends(authenticated_request)]
 )
 def found_bike_report(
+    bike_owner: str = Form(...),
     frame_number: str = Form(...),
     street_name: str = Form(...),
     comment: str = Form(...),
@@ -78,6 +79,7 @@ def found_bike_report(
 
  # Need to transfer all Form fields to
     bikeIncident = FoundBikeReport(
+        bike_owner=bike_owner,
         street_name=street_name,
         comment=comment,
         frame_number=frame_number,
