@@ -13,7 +13,7 @@ from src.auth.dependencies import Verify2FASession, strong_password, phone_numbe
 from src.dependencies import sanitize_phone_number
 from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, AuthCooldownResponse
-from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession
+from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
 logger = logging.getLogger(__name__)
 
