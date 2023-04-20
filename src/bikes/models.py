@@ -6,6 +6,7 @@ from pydantic import Field, PrivateAttr
 from src.models import Entity
 from src.storage.models import S3File
 
+
 class BikeGender(str, Enum):
     MALE = "male",
     FEMALE = "female",
@@ -43,7 +44,18 @@ class BikeState(str, Enum):
     TRANSFERABLE = "transferable",
     IN_TRANSFER = "in_transfer",
 
-    
+
+class FoundBikeReport(Entity):
+
+    _COLLECTION_NAME = PrivateAttr(default='discoveries')
+    frame_number: str
+    street_name: str
+    comment: str
+    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
+                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
+    created_at: datetime.datetime = datetime.datetime.now()
+
+
 class Bike(Entity):
 
     _COLLECTION_NAME = PrivateAttr(default='bikes')
@@ -55,14 +67,17 @@ class Bike(Entity):
     kind: BikeKind
     brand: str                          # Should probably be a model but is fine for now
     color: BikeColor
-    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=['image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
-    receipt: S3File | None = S3File.field(path='bike-receipts', allowed_content_types=['*'])
+    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
+                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
+    receipt: S3File | None = S3File.field(
+        path='bike-receipts', allowed_content_types=['*'])
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
     created_at: datetime.datetime = datetime.datetime.now()
-    state: BikeState = BikeState.TRANSFERABLE # Figure out how to handle these states
-    
+    # Figure out how to handle these states
+    state: BikeState = BikeState.TRANSFERABLE
+
 # ___ Changelog ___
 # TODO: Add testing framework
