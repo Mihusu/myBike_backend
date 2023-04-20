@@ -18,15 +18,17 @@ router = APIRouter(
 def get_activities(request: Request, user: BikeOwner = Depends(authenticated_request)):
     
     outgoing_requests  = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'sender' : user.id, 'state' : BikeTransferState.PENDING})]
-    incoming_requests = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'receiver' : user.id, 'state' : BikeTransferState.PENDING})]
+    incoming_requests =  [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({'receiver' : user.id, 'state' : BikeTransferState.PENDING})]
     completed_requests = [expand_transfer(BikeTransfer(**transfer), request) for transfer in request.app.collections['transfers'].find({
-        '$or' : [
-            { 'sender' : user.id }, 
-            { 'receiver' : user.id }
-        ],
-        '$or' : [
-            { 'state' : BikeTransferState.ACCEPTED }, 
-            { 'state' : BikeTransferState.DECLINED }
+        '$and' : [
+            {'$or' : [
+                { 'sender' : user.id }, 
+                { 'receiver' : user.id }
+            ]},
+            {'$or' : [
+                { 'state' : BikeTransferState.ACCEPTED }, 
+                { 'state' : BikeTransferState.DECLINED }
+            ]}
         ]
     })]
     
