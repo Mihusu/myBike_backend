@@ -192,4 +192,8 @@ def report_bike_stolen(
                             detail=f"User is not the bike owner")
     bike.reported_stolen = not bike.reported_stolen
 
+    # If reported found, remove any existing discoveries pertaining to this bike
+    if not bike.reported_stolen:
+        request.app.collections["discoveries"].delete_many({"frame_number": bike.frame_number})
+
     return bike.save()
