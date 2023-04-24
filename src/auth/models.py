@@ -26,6 +26,7 @@ class AccessSession(Entity):
     login_attempts: int = 0
     otp: str = Field(default_factory=generate_otp)
     cooldown_expires_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    sms_cooldown_expires_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     #last_login_attempt_at: datetime
 
 

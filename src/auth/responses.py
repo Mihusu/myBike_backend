@@ -15,12 +15,14 @@ class DeviceVerificationResponse(BaseModel):
 class InvalidCredentialsResponse(BaseModel):
     msg : str
     attempts_left : int
-    
+
+class DeviceBlacklisted(BaseModel):
+    msg : str
+
+class DeviceVerifyCooldownResponse(BaseModel):
+    msg : str
+    sms_cooldown_expires_at : datetime.datetime
 
 class AuthCooldownResponse(BaseModel):
     msg : str
     cooldown_expires_at : datetime.datetime
-
-
-class DeviceBlacklisted(BaseModel):
-    msg : str
