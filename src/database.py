@@ -1,11 +1,8 @@
 import certifi
-from dotenv import dotenv_values
 from pymongo import MongoClient
 from typing import Collection
 
-
-config = dotenv_values(".env")
-
+from src.settings import config
 
 class MongoDatabase:
 

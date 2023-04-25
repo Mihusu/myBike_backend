@@ -2,11 +2,11 @@ import datetime
 import uuid
 import bcrypt
 import logging
-from dotenv import dotenv_values
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
+from src.settings import config
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
@@ -16,8 +16,6 @@ from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVer
 from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
 logger = logging.getLogger(__name__)
-
-config = dotenv_values(".env")
 
 router = APIRouter(
     tags=['authentication'],

@@ -1,18 +1,14 @@
 import datetime
 import uuid
-from dotenv import dotenv_values
 from fastapi import Body, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.exceptions import JOSEError
 
+from src.settings import config
 from src.owners.models import BikeOwner
 
 security = HTTPBearer(description="Paste in your access token here to be used in subsequent requests")
-
-
-config = dotenv_values(".env")
-
 
 class Verify2FASession:
     def __init__(self, name: str):

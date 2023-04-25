@@ -60,3 +60,13 @@ It is mandatory to install Python version 3.11 or above to get accurate type-hin
 
 Commit code to the development branch
 
+# Docker deployment
+
+## Steps
+
+### 1. Build the docker image
+```console
+$ 
+```
+
+
