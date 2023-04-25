@@ -166,7 +166,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
     # Check if the device is already known
     if not owner.devices.is_known(req_ip_address):
 
-        COOLDOWN_PERIOD = datetime.timedelta(minutes=2)
+        SMS_COOLDOWN = datetime.timedelta(minutes=2)
 
         # Check if user is still on cooldown
         sms_on_cooldown = current_ac_session.sms_cooldown_expires_at > datetime.datetime.now()
@@ -186,7 +186,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         )
 
         # Sets a cooldown timer for sending an SMS to the user
-        current_ac_session.sms_cooldown_expires_at = datetime.datetime.now() + COOLDOWN_PERIOD
+        current_ac_session.sms_cooldown_expires_at = datetime.datetime.now() + SMS_COOLDOWN
         current_ac_session.save()
 
         raise HTTPException(status_code=status.HTTP_307_TEMPORARY_REDIRECT, detail={

@@ -8,8 +8,17 @@ from src.routers import main_router
 
 config = dotenv_values(".env")
 
+if config['ENVIRONMENT'] == 'prod':
+    app = FastAPI(
+        docs_url=None, # Disables /docs
+        redoc_url=None # Disables /redoc
+    )
+elif config['ENVIRONMENT'] == 'dev':
+    app = FastAPI()
+else:
+    print("Unknown Environment!")
+    exit()
 
-app = FastAPI()
 
 origins = [
     "http://127.0.0.1:5173",
