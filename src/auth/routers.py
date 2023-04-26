@@ -322,18 +322,3 @@ def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), pas
 
     # Remove the reset password session to prevent future access to this verified session.
     request.app.collections['2fa_sessions'].delete_one({'_id': session_id})
-
-
-# TODO: Make a dependency for trimming phone number
-# TODO: Make a dependency for securing that passwords meets password requirements
-# To be removed once demonstrated
-
-
-@router.get('/protected', summary="Example of a protected route")
-def protected_route(token: str = Depends(valid_token)):
-    return {"access_granted", token}
-
-
-@router.get('/protected-with.user', summary="Example of a protected route that gets the user profile")
-def protected_route_user(user: BikeOwner = Depends(authenticated_request)):
-    return user

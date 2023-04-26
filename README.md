@@ -64,9 +64,38 @@ Commit code to the development branch
 
 ## Steps
 
-### 1. Build the docker image
+### 1. Create and upload docker image
+
+First, build the image with the following command:
 ```console
-$ 
+docker build -t jsaad20/production:latest .
 ```
 
+This will create a docker image.
+Next we push this image to docker hub so we can later pull down the image
+from claaudia.
+```console
+docker push jsaad20/mincykelbackend.prod
+```
+
+### 2. Login and pull docker image from claaudia server
+```console
+$ sudo docker pull jsaad20/production:latest
+```
+
+Now we use docker run with watchtower to startup the application
+while watchtower listens for updates to the base image
+```console
+sudo docker run -d \
+  --name watchtower \
+  -e REPO_USER=jsaad20 \
+  -e REPO_PASS=weZcom-jenve0-pozpyr \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower backend.prod --interval 30
+```
+
+If the container have not been started, start it with the following command:
+```console
+$ sudo docker run -d --name backend.prod -e ENV=prod -p 80:80 -p 81:443 jsaad20/production:latest
+```
 
