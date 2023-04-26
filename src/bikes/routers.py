@@ -108,24 +108,31 @@ def register_bike(
     receipt: UploadFile = File(default=None)
 ) -> Bike:
 
-    # Need to transfer all Form fields to
-    bike = Bike(
-        frame_number=frame_number.lower(),
-        gender=gender,
-        is_electric=is_electric,
-        kind=kind,
-        brand=brand,
-        color=color,
-    )
-    bike.image.upload_and_set(image)
-    bike.receipt.upload_and_set(receipt)
+    if frame_number.isupper():
+        raise HTTPException(status_code=405, detail=f"Bike with uppercase '{frame_number}' is not allowed")
+    
+    elif not frame_number.islower():
+        raise HTTPException(status_code=405, detail=f"Bike with mixed case '{frame_number}' is not allowed")
+    
+    else:
+        # Need to transfer all Form fields to
+        bike = Bike(
+            frame_number=frame_number,
+            gender=gender,
+            is_electric=is_electric,
+            kind=kind,
+            brand=brand,
+            color=color,
+        )
+        bike.image.upload_and_set(image)
+        bike.receipt.upload_and_set(receipt)
 
-    send_sms(
-        msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}",
-        to=phone_number.replace(' ', '')
-    )
+        send_sms(
+            msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}",
+            to=phone_number.replace(' ', '')
+        )
 
-    return bike.save()
+        return bike.save()
 
 @router.post("/claim/{claim_token}", description="Claim a new bike")
 def claim_bike(request: Request, claim_token: uuid.UUID, user: BikeOwner = Depends(authenticated_request)) -> Bike:

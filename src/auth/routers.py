@@ -11,7 +11,7 @@ from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
 from src.dependencies import sanitize_phone_number
-from src.auth.models import AccessSession, Device
+from src.auth.models import AccessSession, Device, DeviceList
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, DeviceVerifyCooldownResponse, AuthCooldownResponse
 from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
@@ -244,11 +244,16 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
     session = BikeOwnerRegistrationSession(**session)
 
     # Transfer over info from session object to bike owner details
+
     bike_owner = BikeOwner(
         phone_number=session.phone_number, hash=session.hash)
-    bike_owner.save()
+    
+    # Add owner's current ip to whitelist
+    req_ip_address = request.client.host
+    device = Device(req_ip_address, "default")
+    bike_owner.devices.white_list.append(device)
 
-    # @TODO Add the current ip to the whitelist
+    bike_owner.save()
 
     # Maybe remove the session as the registration was successful?
     Authorize = AuthJWT()
