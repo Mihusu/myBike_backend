@@ -5,7 +5,6 @@ services:
     image: jsaad20/production:latest
     ports:
       - "80:80"
-      - "81:443"
     environment:
       - ENV=prod
     volumes:

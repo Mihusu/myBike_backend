@@ -62,9 +62,7 @@ Commit code to the development branch
 
 # Docker deployment
 
-## Steps
-
-### 1. Create and upload docker image
+### Step 1. Create and upload docker image
 
 First, build the image with the following command:
 ```console
@@ -75,18 +73,28 @@ This will create a docker image.
 Next we push this image to docker hub so we can later pull down the image
 from claaudia.
 ```console
-docker push jsaad20/mincykelbackend.prod
+docker push jsaad20/production:latest
 ```
 
-### 2. Login and pull docker image from claaudia server
+### Step 2. Login and pull docker image from claaudia server
 ```console
 $ sudo docker pull jsaad20/production:latest
 ```
 
-Now we use docker run with watchtower to startup the application
-while watchtower listens for updates to the base image
+If the container have not been started on the server (it should always be running), it can be started with the following command:
 ```console
-sudo docker run -d \
+sudo docker-compose -f docker-compose.yml up -d
+```
+
+To run traefik run:
+```console
+sudo docker-compose -f docker-compose.traefik.yml up -d
+```
+
+Now we use docker run with watchtower to startup the application
+while watchtower listens for updates to the base image to automatically apply changes
+```console
+sudo docker run -ti -d \
   --name watchtower \
   -e REPO_USER=jsaad20 \
   -e REPO_PASS=weZcom-jenve0-pozpyr \
@@ -94,8 +102,4 @@ sudo docker run -d \
   containrrr/watchtower backend.prod --interval 30
 ```
 
-If the container have not been started, start it with the following command:
-```console
-$ sudo docker run -d --name backend.prod -e ENV=prod -p 80:80 -p 81:443 jsaad20/production:latest
-```
 
