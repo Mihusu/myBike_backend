@@ -11,7 +11,7 @@ from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
 from src.dependencies import sanitize_phone_number
-from src.auth.models import AccessSession, Device, DeviceList
+from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, DeviceVerifyCooldownResponse, AuthCooldownResponse
 from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
@@ -252,7 +252,7 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
     
     # Add owner's current ip to whitelist
     req_ip_address = request.client.host
-    device = Device(req_ip_address, "default")
+    device = Device(ip_address=req_ip_address, name="default")
     bike_owner.devices.white_list.append(device)
 
     bike_owner.save()
@@ -291,7 +291,7 @@ def request_password_reset(request: Request, phone_number: str = Depends(sanitiz
     }
 
 
-@router.put('/reset-password/verify', summary="Verify the OTP comming from a password reset request", status_code=200)
+@router.put('/reset-password/verify', summary="Verify the OTP coming from a password reset request", status_code=200)
 def verify_password_reset(request: Request, session=Depends(Verify2FASession('password-reset'))):
     session = ResetPasswordSession(**session)
 

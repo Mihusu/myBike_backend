@@ -30,7 +30,7 @@ class Verify2FASession:
             
         if datetime.datetime.now() > session_doc['expires_at']:
             raise HTTPException(
-                status_code=403, detail=f"Session expired at: {session_doc['expires_at']}")
+                status_code=410, detail=f"Session expired at: {session_doc['expires_at']}")
 
         if not otp == session_doc['otp']:
             raise HTTPException(status_code=403, detail=f"Invalid OTP")
@@ -77,7 +77,7 @@ def strong_password(password: str = Body()):
     MIN_PASSWORD_LEN = 12
     
     if not len(password) >= MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=400, detail=f"Weak password. Password must contain 12 characters or above")
+        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain 12 characters or above")
     
     return password
 
