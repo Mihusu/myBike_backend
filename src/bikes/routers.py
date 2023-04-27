@@ -134,26 +134,6 @@ def register_bike(
 
         return bike.save()
 
-# This feature is still questionable.
-# The deletion or removal of ones own bike should probably be handled
-# as a different process.
-
-
-@router.delete(
-    '/{id}',
-    description="Remove a bike"
-)
-def remove_bike(id: uuid.UUID, request: Request, response: Response):
-    delete_result = request.app.collections["bikes"].delete_one({"_id": id})
-
-    if delete_result.deleted_count == 1:
-        response.status_code = status.HTTP_204_NO_CONTENT
-        return response
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"Bike with ID {id} not found")
-
-
 @router.post("/claim/{claim_token}", description="Claim a new bike")
 def claim_bike(request: Request, claim_token: uuid.UUID, user: BikeOwner = Depends(authenticated_request)) -> Bike:
     bike_in_db = request.app.collections["bikes"].find_one(

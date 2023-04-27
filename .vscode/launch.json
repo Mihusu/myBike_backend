@@ -12,8 +12,6 @@
             "args": [
                 "src.main:app"
             ],
-            "jinja": true,
-            "justMyCode": true
         }
     ]
 }

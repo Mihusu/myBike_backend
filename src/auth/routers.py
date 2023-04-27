@@ -2,11 +2,11 @@ import datetime
 import uuid
 import bcrypt
 import logging
-from dotenv import dotenv_values
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
+from src.settings import config
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
@@ -16,8 +16,6 @@ from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVer
 from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
 logger = logging.getLogger(__name__)
-
-config = dotenv_values(".env")
 
 router = APIRouter(
     tags=['authentication'],
@@ -329,18 +327,3 @@ def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), pas
 
     # Remove the reset password session to prevent future access to this verified session.
     request.app.collections['2fa_sessions'].delete_one({'_id': session_id})
-
-
-# TODO: Make a dependency for trimming phone number
-# TODO: Make a dependency for securing that passwords meets password requirements
-# To be removed once demonstrated
-
-
-@router.get('/protected', summary="Example of a protected route")
-def protected_route(token: str = Depends(valid_token)):
-    return {"access_granted", token}
-
-
-@router.get('/protected-with.user', summary="Example of a protected route that gets the user profile")
-def protected_route_user(user: BikeOwner = Depends(authenticated_request)):
-    return user
