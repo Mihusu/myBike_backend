@@ -5,6 +5,7 @@ from fastapi import Body, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.exceptions import JOSEError
+from src.dependencies import sanitize_phone_number
 
 from src.owners.models import BikeOwner
 
@@ -57,7 +58,7 @@ def authenticated_request(request: Request, token = Depends(valid_token)) -> Bik
     user = request.app.collections['bike_owners'].find_one({'_id': uuid.UUID(token_claims['sub']) })
     return BikeOwner(**user)
     
-def phone_number_not_registered(request: Request, phone_number: str = Body()):
+def phone_number_not_registered(request: Request, phone_number: str = Depends(sanitize_phone_number)):
     """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
