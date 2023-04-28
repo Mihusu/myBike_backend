@@ -1,19 +1,15 @@
 import datetime
 import uuid
-from dotenv import dotenv_values
 from fastapi import Body, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.exceptions import JOSEError
 from src.dependencies import sanitize_phone_number
 
+from src.settings import config
 from src.owners.models import BikeOwner
 
 security = HTTPBearer(description="Paste in your access token here to be used in subsequent requests")
-
-
-config = dotenv_values(".env")
-
 
 class Verify2FASession:
     def __init__(self, name: str):
@@ -31,7 +27,7 @@ class Verify2FASession:
             
         if datetime.datetime.now() > session_doc['expires_at']:
             raise HTTPException(
-                status_code=403, detail=f"Session expired at: {session_doc['expires_at']}")
+                status_code=410, detail=f"Session expired at: {session_doc['expires_at']}")
 
         if not otp == session_doc['otp']:
             raise HTTPException(status_code=403, detail=f"Invalid OTP")
@@ -78,7 +74,7 @@ def strong_password(password: str = Body()):
     MIN_PASSWORD_LEN = 12
     
     if not len(password) >= MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=400, detail=f"Weak password. Password must contain 12 characters or above")
+        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain 12 characters or above")
     
     return password
 

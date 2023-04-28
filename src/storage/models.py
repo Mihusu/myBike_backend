@@ -3,15 +3,12 @@ import logging
 from typing import Self
 import uuid
 import boto3
-from dotenv import dotenv_values
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Field, PrivateAttr
 from botocore.exceptions import ClientError
 
 from src.models import Entity
-
-
-config = dotenv_values(".env")
+from src.settings import config
 
 s3_client = boto3.client(
     service_name='s3',

@@ -1,0 +1,11 @@
+version: "1.0"
+services:
+  backend.prod:
+    build: .
+    image: jsaad20/production:latest
+    ports:
+      - "80:80"
+    environment:
+      - ENV=prod
+    volumes:
+      - .:/code
