@@ -294,21 +294,31 @@ def request_password_reset(request: Request, phone_number: str = Depends(sanitiz
     if not owner:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Bike owner with phonenumber '{phone_number}' not found")
+    
+    existing_session = request.app.collections["2fa_sessions"].find_one({'phone_number': phone_number, 'name': 'password-reset'}, sort=[('$natural',-1)])
 
+    if existing_session:
+        current_session = ResetPasswordSession(**existing_session)
+        sms_on_cooldown = current_session.expires_at > datetime.datetime.now()
+        if sms_on_cooldown:
+            raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail={
+                "msg": "There's recently been requested a reset password attempt",
+                "cooldown_expires_at": str(current_session.expires_at)
+            })
 
     # Start a new password reset session with the owner
-    session = ResetPasswordSession(
+    current_rp_session = ResetPasswordSession(
         name='password-reset', phone_number=phone_number)
-    session.save()
+    current_rp_session.save()
 
     # Send an sms with a OTP to the phonenumber saying
     # that they are trying to reset their password
     send_sms(to=phone_number,
-             msg=f"Hej\nDin nulstillingskode er: {session.otp}\nDet kan ikke lade sig gøre at nulstille adgangskoden uden denne kode.")
+             msg=f"Hej\nDin nulstillingskode er: {current_rp_session.otp}\nDet kan ikke lade sig gøre at nulstille adgangskoden uden denne kode.")
 
     return {
-        'session_id': session.id,
-        'expires_at': session.expires_at
+        'session_id': current_rp_session.id,
+        'expires_at': current_rp_session.expires_at
     }
 
 
