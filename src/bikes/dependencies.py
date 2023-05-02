@@ -3,14 +3,14 @@ from fastapi import Form, HTTPException, Request
 
 def frame_number_not_registered(request: Request, frame_number: str = Form(...)):
     """Checks that the frame number is not already in the database"""
-    bike = request.app.collections['bikes'].find_one({'frame_number': frame_number})
+    bike = request.app.collections['bikes'].find_one({'frame_number': frame_number.lower()})
     if bike:
         raise HTTPException(status_code=400, detail=f"Bike with frame number '{frame_number}' is already registered")
 
 def valid_frame_number(frame_number: str = Form(...)):
     """ Validates the frame number according to the danish frame number format
 
-    MANUFACTUER_NUMBER | SERIAL_NUMBER | YEAR_MARK
+    MANUFACTURER_NUMBER | SERIAL_NUMBER | YEAR_MARK
 
     MANUFACTUER_NUMBER  : 1..4 characters
     SERIAL_NUMBER       : 1..* digits

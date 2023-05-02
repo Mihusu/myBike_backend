@@ -235,10 +235,13 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # If a session is found, check time since creation to prevent SMS spam to phone number
     # If 60 seconds have passed allow creation of new registration session
     if existing_session:
-        created_at = BikeOwnerRegistrationSession(**existing_session).created_at
-        time_delta = datetime.datetime.now() - created_at
+        current_session = BikeOwnerRegistrationSession(**existing_session)
+        time_delta = datetime.datetime.now() - current_session.created_at
         if (time_delta.seconds < 300):
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail={"msg": f"You already have an active registration session. Please wait {300 - time_delta.seconds} seconds before trying again"})
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail={
+                "msg": f"You already have an active registration session. Please wait {300 - time_delta.seconds} seconds before trying again",
+                "cooldown_expires_at": str(current_session.expires_at)
+                })
         else:
             print(f"td seconds is {time_delta.seconds}, cooldown is over. Permission granted")
 
