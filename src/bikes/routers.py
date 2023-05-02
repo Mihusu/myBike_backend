@@ -90,7 +90,7 @@ def found_bike_report(
 
 
 @router.post(
-    '/',
+    '',
     description="Register a new bike",
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(frame_number_not_registered), Depends(

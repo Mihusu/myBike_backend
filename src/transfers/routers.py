@@ -34,7 +34,7 @@ def get_transfer(request: Request, transfer_id: uuid.UUID, user: BikeOwner = Dep
     return expand_transfer(transfer, request)
 
 
-@router.post('/', description="creating a bike transfer", status_code=status.HTTP_201_CREATED)
+@router.post('', description="creating a bike transfer", status_code=status.HTTP_201_CREATED)
 def create_transfer(
     request: Request, 
     sender: BikeOwner = Depends(authenticated_request), 

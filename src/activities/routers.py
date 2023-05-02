@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 
-@router.get('/', summary="Get all activities for a user", status_code=status.HTTP_200_OK)
+@router.get('', summary="Get all activities for a user", status_code=status.HTTP_200_OK)
 def get_activities(request: Request, user: BikeOwner = Depends(authenticated_request)):
 
     discoveries = list(request.app.collections["discoveries"].find({'bike_owner': user.id}))
