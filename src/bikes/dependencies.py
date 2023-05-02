@@ -1,5 +1,5 @@
 import re as regex
-from fastapi import Form, HTTPException, Request
+from fastapi import Form, HTTPException, Request, status
 
 def frame_number_not_registered(request: Request, frame_number: str = Form(...)):
     """Checks that the frame number is not already in the database"""
@@ -22,7 +22,7 @@ def valid_frame_number(frame_number: str = Form(...)):
     if valid:
         return frame_number
     else:
-        raise ValueError(f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
 
 def valid_danish_phone_number(phone_number: str = Form(...)):
     trimmed = phone_number.replace(' ', '')
