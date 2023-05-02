@@ -5,13 +5,14 @@ import logging
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
+import pymongo
 
 from src.settings import config
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
 from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
 from src.dependencies import sanitize_phone_number
-from src.auth.models import AccessSession, Device, DeviceList
+from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, DeviceVerifyCooldownResponse, AuthCooldownResponse
 from src.auth.sessions import BikeOwnerRegistrationSession, ResetPasswordSession, TrustDeviceSession
 
@@ -219,15 +220,34 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # 1. Check that phone number does not already exists
     # 1.25 Validate password against OWASP standards
     # 1.5 Hash and salt password
-    # 2. Create and save new BikeOwnerSessiom object
-    # 3. Send sms with otp to phone_number
     hashed_password = bcrypt.hashpw(
         password.encode(encoding="utf-8"), bcrypt.gensalt())
 
+    # 1.75 Check whether a session for phone number and ip already exists
+    request_ip = request.client.host
+    print(request.client)
+    print(request_ip)
+    # Find the last entry
+    existing_session = request.app.collections["2fa_sessions"].find_one({'request_ip_address': request_ip, 'name': 'bikeowner-registration'}, sort=[('$natural',-1)])
+    print(existing_session)
+    # print(now)
+
+    # If a session is found, check time since creation to prevent SMS spam to phone number
+    # If 60 seconds have passed allow creation of new registration session
+    if existing_session:
+        created_at = BikeOwnerRegistrationSession(**existing_session).created_at
+        time_delta = datetime.datetime.now() - created_at
+        if (time_delta.seconds < 300):
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail={"msg": f"You already have an active registration session. Please wait {300 - time_delta.seconds} seconds before trying again"})
+        else:
+            print(f"td seconds is {time_delta.seconds}, cooldown is over. Permission granted")
+
+    # 2. Create and save new BikeOwnerSession object
     session = BikeOwnerRegistrationSession(
-        name='bikeowner-registration', phone_number=phone_number, hash=hashed_password)
+        name='bikeowner-registration', phone_number=phone_number, hash=hashed_password, request_ip_address=request_ip)
     session.save()
 
+    # 3. Send sms with otp to phone_number
     send_sms(
         msg=f"Din verifikations kode er: {session.otp}",
         to=phone_number
@@ -244,18 +264,20 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
     session = BikeOwnerRegistrationSession(**session)
 
     # Transfer over info from session object to bike owner details
-
     bike_owner = BikeOwner(
         phone_number=session.phone_number, hash=session.hash)
     
     # Add owner's current ip to whitelist
     req_ip_address = request.client.host
-    device = Device(req_ip_address, "default")
+    device = Device(ip_address=req_ip_address, name="default")
     bike_owner.devices.white_list.append(device)
 
     bike_owner.save()
 
-    # Maybe remove the session as the registration was successful?
+    # Maybe remove the session as the registration was successful? Implemented
+    request.app.collections['2fa_sessions'].delete_one({'_id': session.id})
+    
+
     Authorize = AuthJWT()
     return {
         "access_token": Authorize.create_access_token(subject=str(bike_owner.id)),
@@ -272,24 +294,35 @@ def request_password_reset(request: Request, phone_number: str = Depends(sanitiz
     if not owner:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Bike owner with phonenumber '{phone_number}' not found")
+    
+    existing_session = request.app.collections["2fa_sessions"].find_one({'phone_number': phone_number, 'name': 'password-reset'}, sort=[('$natural',-1)])
+
+    if existing_session:
+        current_session = ResetPasswordSession(**existing_session)
+        sms_on_cooldown = current_session.expires_at > datetime.datetime.now()
+        if sms_on_cooldown:
+            raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail={
+                "msg": "There's recently been requested a reset password attempt",
+                "cooldown_expires_at": str(current_session.expires_at)
+            })
 
     # Start a new password reset session with the owner
-    session = ResetPasswordSession(
+    current_rp_session = ResetPasswordSession(
         name='password-reset', phone_number=phone_number)
-    session.save()
+    current_rp_session.save()
 
     # Send an sms with a OTP to the phonenumber saying
     # that they are trying to reset their password
     send_sms(to=phone_number,
-             msg=f"Hej\nDin nulstillingskode er: {session.otp}\nDet kan ikke lade sig gøre at nulstille adgangskoden uden denne kode.")
+             msg=f"Hej\nDin nulstillingskode er: {current_rp_session.otp}\nDet kan ikke lade sig gøre at nulstille adgangskoden uden denne kode.")
 
     return {
-        'session_id': session.id,
-        'expires_at': session.expires_at
+        'session_id': current_rp_session.id,
+        'expires_at': current_rp_session.expires_at
     }
 
 
-@router.put('/reset-password/verify', summary="Verify the OTP comming from a password reset request", status_code=200)
+@router.put('/reset-password/verify', summary="Verify the OTP coming from a password reset request", status_code=200)
 def verify_password_reset(request: Request, session=Depends(Verify2FASession('password-reset'))):
     session = ResetPasswordSession(**session)
 

@@ -4,6 +4,7 @@ from fastapi import Body, HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.exceptions import JOSEError
+from src.dependencies import sanitize_phone_number
 
 from src.settings import config
 from src.owners.models import BikeOwner
@@ -26,7 +27,7 @@ class Verify2FASession:
             
         if datetime.datetime.now() > session_doc['expires_at']:
             raise HTTPException(
-                status_code=403, detail=f"Session expired at: {session_doc['expires_at']}")
+                status_code=410, detail=f"Session expired at: {session_doc['expires_at']}")
 
         if not otp == session_doc['otp']:
             raise HTTPException(status_code=403, detail=f"Invalid OTP")
@@ -53,7 +54,7 @@ def authenticated_request(request: Request, token = Depends(valid_token)) -> Bik
     user = request.app.collections['bike_owners'].find_one({'_id': uuid.UUID(token_claims['sub']) })
     return BikeOwner(**user)
     
-def phone_number_not_registered(request: Request, phone_number: str = Body()):
+def phone_number_not_registered(request: Request, phone_number: str = Depends(sanitize_phone_number)):
     """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
@@ -73,7 +74,7 @@ def strong_password(password: str = Body()):
     MIN_PASSWORD_LEN = 12
     
     if not len(password) >= MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=400, detail=f"Weak password. Password must contain 12 characters or above")
+        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain 12 characters or above")
     
     return password
 
