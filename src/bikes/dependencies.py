@@ -1,16 +1,16 @@
 import re as regex
-from fastapi import Form, HTTPException, Request
+from fastapi import Form, HTTPException, Request, status
 
 def frame_number_not_registered(request: Request, frame_number: str = Form(...)):
     """Checks that the frame number is not already in the database"""
-    bike = request.app.collections['bikes'].find_one({'frame_number': frame_number})
+    bike = request.app.collections['bikes'].find_one({'frame_number': frame_number.lower()})
     if bike:
         raise HTTPException(status_code=400, detail=f"Bike with frame number '{frame_number}' is already registered")
 
 def valid_frame_number(frame_number: str = Form(...)):
     """ Validates the frame number according to the danish frame number format
 
-    MANUFACTUER_NUMBER | SERIAL_NUMBER | YEAR_MARK
+    MANUFACTURER_NUMBER | SERIAL_NUMBER | YEAR_MARK
 
     MANUFACTUER_NUMBER  : 1..4 characters
     SERIAL_NUMBER       : 1..* digits
@@ -22,11 +22,11 @@ def valid_frame_number(frame_number: str = Form(...)):
     if valid:
         return frame_number
     else:
-        raise ValueError(f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
 
 def valid_danish_phone_number(phone_number: str = Form(...)):
     trimmed = phone_number.replace(' ', '')
     valid = regex.search('^(\+45)?[0-9]{8}', trimmed)
     if not valid:
-        raise ValueError("Invalid phonenumber. Currently only danish phonenumbers are valid")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid phonenumber. Currently only danish phonenumbers are valid")
         

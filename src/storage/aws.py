@@ -1,11 +1,10 @@
 import datetime
 import logging
-from dotenv import dotenv_values
 import boto3
 from botocore.exceptions import ClientError
 from fastapi import HTTPException, UploadFile
 
-config = dotenv_values(".env")
+from src.settings import config
 
 s3_client = boto3.client(
     service_name='s3',

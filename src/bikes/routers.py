@@ -41,25 +41,23 @@ def get_my_bikes(request: Request, user: BikeOwner = Depends(authenticated_reque
 
 #     return bike
 
-
 @router.get(
     '/{frame_number}',
-    description=" Get info about if a bike has been reported stolen",
+    description="Get info about if a bike has been reported stolen",
     status_code=status.HTTP_200_OK
 )
-def get_bike_by_frame_number(request: Request, frame_number: str) -> Bike:
+def get_bike_by_frame_number(request: Request, frame_number: str, user: BikeOwner = Depends(authenticated_request)) -> Bike:
     bike_in_db = request.app.collections["bikes"].find_one(
-        {"frame_number": frame_number})
+        {"frame_number": frame_number.lower()})
     if bike_in_db is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Bike with frame number{frame_number} not found")
+                            detail=f"Cykel med stelnummer {frame_number} ikke fundet i vores system")
     bike = Bike(**bike_in_db)
 
     if bike.reported_stolen:
         return bike
     else:
-        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT,
-                            detail=f"Bike with frame number{frame_number} has not been reported stolen")
+        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -69,18 +67,20 @@ def get_bike_by_frame_number(request: Request, frame_number: str) -> Bike:
     dependencies=[Depends(authenticated_request)]
 )
 def found_bike_report(
+    bike_owner: uuid.UUID = Form(...),
     frame_number: str = Form(...),
-    street_name: str = Form(...),
+    address: str = Form(...),
     comment: str = Form(...),
     image: UploadFile = File(default=None),
 
-):
+) -> FoundBikeReport:
 
  # Need to transfer all Form fields to
     bikeIncident = FoundBikeReport(
-        street_name=street_name,
+        bike_owner=bike_owner,
+        address=address,
         comment=comment,
-        frame_number=frame_number,
+        frame_number=frame_number.lower(),
     )
     bikeIncident.image.upload_and_set(image)
 
@@ -88,7 +88,7 @@ def found_bike_report(
 
 
 @router.post(
-    '/',
+    '',
     description="Register a new bike",
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(frame_number_not_registered), Depends(
@@ -106,7 +106,9 @@ def register_bike(
     receipt: UploadFile = File(default=None)
 ) -> Bike:
 
-    # Need to transfer all Form fields to
+    # No matter how the user inputs the frame number,
+    # we handle that serverside and save as lower case
+    # Need to transfer all Form fields to bike model
     bike = Bike(
         frame_number=frame_number.lower(),
         gender=gender,
@@ -124,26 +126,6 @@ def register_bike(
     )
 
     return bike.save()
-
-# This feature is still questionable.
-# The deletion or removal of ones own bike should probably be handled
-# as a different process.
-
-
-@router.delete(
-    '/{id}',
-    description="Remove a bike"
-)
-def remove_bike(id: uuid.UUID, request: Request, response: Response):
-    delete_result = request.app.collections["bikes"].delete_one({"_id": id})
-
-    if delete_result.deleted_count == 1:
-        response.status_code = status.HTTP_204_NO_CONTENT
-        return response
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"Bike with ID {id} not found")
-
 
 @router.post("/claim/{claim_token}", description="Claim a new bike")
 def claim_bike(request: Request, claim_token: uuid.UUID, user: BikeOwner = Depends(authenticated_request)) -> Bike:
@@ -180,7 +162,7 @@ def report_bike_stolen(
     id: uuid.UUID,
     request: Request,
     user: BikeOwner = Depends(authenticated_request)
-) -> Bike:
+):
 
     bike_in_db = request.app.collections["bikes"].find_one({"_id": id})
     bike: Bike = Bike(**bike_in_db)
@@ -188,6 +170,12 @@ def report_bike_stolen(
     if not bike.owner == user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=f"User is not the bike owner")
+    
+    # If correct owner, flip bike's stolen attribute
     bike.reported_stolen = not bike.reported_stolen
 
-    return bike.save()
+    # If reported found, remove any existing discoveries pertaining to this bike
+    if not bike.reported_stolen:
+        request.app.collections["discoveries"].delete_many({"frame_number": bike.frame_number})
+
+    bike.save()

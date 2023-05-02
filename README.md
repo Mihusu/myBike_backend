@@ -60,3 +60,46 @@ It is mandatory to install Python version 3.11 or above to get accurate type-hin
 
 Commit code to the development branch
 
+# Docker deployment
+
+### Step 1. Create and upload docker image
+
+First, build the image with the following command:
+```console
+docker build -t jsaad20/production:latest .
+```
+
+This will create a docker image.
+Next we push this image to docker hub so we can later pull down the image
+from claaudia.
+```console
+docker push jsaad20/production:latest
+```
+
+### Step 2. Login and pull docker image from claaudia server
+```console
+$ sudo docker pull jsaad20/production:latest
+```
+
+If the container have not been started on the server (it should always be running), it can be started with the following command:
+```console
+sudo docker-compose -f docker-compose.yml up -d
+```
+
+To run traefik run:
+```console
+sudo docker-compose -f docker-compose.traefik.yml up -d
+```
+
+Now we use docker run with watchtower to startup the application
+while watchtower listens for updates to the base image to automatically apply changes
+```console
+sudo docker run -ti -d \
+  --name watchtower \
+  -e REPO_USER=jsaad20 \
+  -e REPO_PASS=weZcom-jenve0-pozpyr \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower backend.prod --interval 30
+```
+
+

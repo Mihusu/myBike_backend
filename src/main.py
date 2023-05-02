@@ -1,35 +1,11 @@
-import certifi
-from dotenv import dotenv_values
 from fastapi import FastAPI
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from src.database import MongoDatabase
 from src.routers import main_router
 
-config = dotenv_values(".env")
-
-
-app = FastAPI()
-
-origins = [
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://localhost:5173",
-    "http://localhost:5174",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from src.settings import app
 
 @app.on_event("startup")
 def startup_db_client():
-    print("Setting up database...")
-    
     mongo_db = MongoDatabase()
     mongo_db.connect()
 
@@ -40,7 +16,6 @@ def startup_db_client():
 
 @app.on_event("shutdown")
 def shutdown_db_client():
-    print("Closing database...")
     app.mongodb_client.close()
 
 app.include_router(main_router)

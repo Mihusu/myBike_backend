@@ -34,6 +34,8 @@ class TrustDeviceSession(Session2FA):
 class BikeOwnerRegistrationSession(Session2FA):    
     hash: bytes
     phone_number: str
+    request_ip_address: str
+    created_at: datetime.datetime = Field(default_factory=lambda : datetime.datetime.now())
     
 
 class ResetPasswordSession(Session2FA):    

@@ -1,7 +1,5 @@
-from dotenv import dotenv_values
 import requests
-
-config = dotenv_values(".env")
+from src.settings import config
 
 def send_sms(msg: str, to: str):
     
