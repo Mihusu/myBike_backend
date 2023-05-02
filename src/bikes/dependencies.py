@@ -28,5 +28,5 @@ def valid_danish_phone_number(phone_number: str = Form(...)):
     trimmed = phone_number.replace(' ', '')
     valid = regex.search('^(\+45)?[0-9]{8}', trimmed)
     if not valid:
-        raise ValueError("Invalid phonenumber. Currently only danish phonenumbers are valid")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid phonenumber. Currently only danish phonenumbers are valid")
         

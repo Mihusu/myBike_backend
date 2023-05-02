@@ -106,9 +106,9 @@ def register_bike(
     receipt: UploadFile = File(default=None)
 ) -> Bike:
 
-        # No matter how the user inputs the frame number,
-        # we handle that serverside and save as lower case
-        # Need to transfer all Form fields to
+    # No matter how the user inputs the frame number,
+    # we handle that serverside and save as lower case
+    # Need to transfer all Form fields to bike model
     bike = Bike(
         frame_number=frame_number.lower(),
         gender=gender,
