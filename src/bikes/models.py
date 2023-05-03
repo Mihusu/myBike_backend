@@ -51,8 +51,8 @@ class FoundBikeReport(Entity):
     bike_owner: uuid.UUID
     frame_number: str
     address: str
-    comment: str
-    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
+    comment: str | None
+    image: S3File | None = S3File.field(path='location-images', allowed_content_types=[
                                         'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
     created_at: datetime.datetime = datetime.datetime.now()
 
