@@ -68,7 +68,7 @@ def create_transfer(
     
     # Check bike is transferable
     if not bike.state == BikeState.TRANSFERABLE:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is already in transfer or not transferable")
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"Bike is already in transfer or not transferable")
     
     # Make a transfer object
     transfer_info = {
