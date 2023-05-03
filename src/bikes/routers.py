@@ -70,7 +70,7 @@ def found_bike_report(
     bike_owner: uuid.UUID = Form(...),
     frame_number: str = Form(...),
     address: str = Form(...),
-    comment: str = Form(...),
+    comment: str = Form(default=None),
     image: UploadFile = File(default=None),
 
 ) -> FoundBikeReport:
