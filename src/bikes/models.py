@@ -53,8 +53,8 @@ class FoundBikeReport(Entity):
     address: str
     comment: str | None
     image: S3File | None = S3File.field(path='location-images', allowed_content_types=[
-                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
-    created_at: datetime.datetime = datetime.datetime.now()
+                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=10_000_000)
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
 
 class Bike(Entity):
@@ -69,14 +69,14 @@ class Bike(Entity):
     brand: str                          # Should probably be a model but is fine for now
     color: BikeColor
     image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
-                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=5_000_000)
+                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=10_000_000)
     receipt: S3File | None = S3File.field(
-        path='bike-receipts', allowed_content_types=['*'])
+        path='bike-receipts', allowed_content_types=['*'], max_size=10_000_000)
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
     stolen_date: datetime.datetime | None
-    created_at: datetime.datetime = datetime.datetime.now()
+    created_at: datetime.datetime = Field(default_factory= lambda : datetime.datetime.now(datetime.timezone.utc))
     # Figure out how to handle these states
     state: BikeState = BikeState.TRANSFERABLE
 

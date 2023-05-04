@@ -25,7 +25,7 @@ class Verify2FASession:
             raise HTTPException(
                 status_code=403, detail=f"Verifying wrong kind of session. Verifying session with name '{self.name}' but got session '{session_doc['name']}'")
             
-        if datetime.datetime.now() > session_doc['expires_at']:
+        if datetime.datetime.now(datetime.timezone.utc) > session_doc['expires_at']:
             raise HTTPException(
                 status_code=410, detail=f"Session expired at: {session_doc['expires_at']}")
 

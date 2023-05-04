@@ -62,7 +62,7 @@ class S3File(BaseModel):
             
         except ClientError as e:
             logging.error(e)
-            raise HTTPException(status_code=500, detail=f"{datetime.datetime.now()}: Failed to save file {file.filename}")
+            raise HTTPException(status_code=500, detail=f"{datetime.datetime.now(datetime.timezone.utc)}: Failed to save file {file.filename}")
     
     class Config:
         underscore_attrs_are_private = True

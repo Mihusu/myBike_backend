@@ -14,7 +14,7 @@ class MongoDatabase:
 
         # Setting the client connection as a class variable makes all subsequent instanciations
         # of the MongoDatabase class able to see connection
-        __class__.connection = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where(), uuidRepresentation='standard')
+        __class__.connection = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where(), uuidRepresentation='standard', tz_aware=True)
         __class__.collections = __class__.connection[config["DB_NAME"]]
 
 
