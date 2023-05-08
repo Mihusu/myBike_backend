@@ -5,12 +5,11 @@ import logging
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
-import pymongo
 
 from src.settings import config
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
-from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
+from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered
 from src.dependencies import sanitize_phone_number
 from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, DeviceVerifyCooldownResponse, AuthCooldownResponse
@@ -89,7 +88,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
     else:
         current_ac_session = AccessSession(**ac_session_doc)
 
-    # Check if user should get a cooldown penalty
+    # Check if session cooldown is expired
     on_cooldown = current_ac_session.cooldown_expires_at > datetime.datetime.now(datetime.timezone.utc)
     if on_cooldown:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
@@ -108,7 +107,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         # Add one attempt to the current access session
         current_ac_session.login_attempts += 1
 
-        # Checks and adds cooldown penalty if necassary
+        # Checks and adds cooldown penalty if necessary
         if current_ac_session.login_attempts >= MAX_ATTEMPTS_BEFORE_COOLDOWN and current_ac_session.login_attempts < MAX_ATTEMPTS_BEFORE_BLACKLIST:
             current_ac_session.cooldown_expires_at = datetime.datetime.now(datetime.timezone.utc) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
             current_ac_session.save()

@@ -1,6 +1,4 @@
-import uuid
-import datetime
-from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from jose import JOSEError
 
 from src.owners.models import BikeOwner
@@ -11,6 +9,7 @@ router = APIRouter(
     prefix='/owners'
 )
 
+# TODO: could use an explanation of where this is used + some gardening, also why is the function called get_transfer?
 
 @router.get('/me', summary="Get a single user's id and phone number", status_code=status.HTTP_200_OK)
 def get_transfer(

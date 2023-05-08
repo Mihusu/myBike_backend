@@ -58,7 +58,7 @@ def phone_number_not_registered(request: Request, phone_number: str = Depends(sa
     """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
-        raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phone number '{phone_number}'")
+        raise HTTPException(status_code=400, detail=f"There already exists a bike owner with given phone number '{phone_number}'")
     
     return phone_number
 
