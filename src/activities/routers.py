@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, Request, status
+import pymongo
 
-from src.activities.responses import ActivityResponse
 from src.auth.dependencies import authenticated_request
-from src.bikes.models import Bike, FoundBikeReport
 from src.owners.models import BikeOwner
 from src.transfers.models import BikeTransfer, BikeTransferState
 from src.transfers.utils import expand_transfer
@@ -34,7 +33,7 @@ def get_activities(request: Request, user: BikeOwner = Depends(authenticated_req
                 {'state': BikeTransferState.DECLINED}
             ]}
         ]
-    })]
+    }).sort('closed_at', pymongo.DESCENDING)]
 
     return {
         'alerts': len(outgoing_requests) + len(incoming_requests) + len(discoveries),

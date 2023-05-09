@@ -68,7 +68,7 @@ def create_transfer(
     
     # Check bike is transferable
     if not bike.state == BikeState.TRANSFERABLE:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike is already in transfer or not transferable")
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"Bike is already in transfer or not transferable")
     
     # Make a transfer object
     transfer_info = {
@@ -159,7 +159,7 @@ def accept_transfer(
     bike.owner = requester.id
     bike.state = BikeState.TRANSFERABLE
     transfer.state = BikeTransferState.ACCEPTED
-    transfer.closed_at = datetime.datetime.now()
+    transfer.closed_at = datetime.datetime.now(datetime.timezone.utc)
 
     bike.save()
 
@@ -191,7 +191,7 @@ def reject_transfer(
     # This does not hand over the ownership to the sender of the request
     bike.state = BikeState.TRANSFERABLE
     transfer.state = BikeTransferState.DECLINED
-    transfer.closed_at = datetime.datetime.now()
+    transfer.closed_at = datetime.datetime.now(datetime.timezone.utc)
 
     bike.save()
 

@@ -5,12 +5,11 @@ import logging
 from fastapi import APIRouter, Body, HTTPException, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
-import pymongo
 
 from src.settings import config
 from src.owners.models import BikeOwner
 from src.notifications.sms import send_sms
-from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered, authenticated_request, valid_token
+from src.auth.dependencies import Verify2FASession, strong_password, phone_number_not_registered
 from src.dependencies import sanitize_phone_number
 from src.auth.models import AccessSession, Device
 from src.auth.responses import AuthSuccessResponse, DeviceBlacklisted, DeviceVerificationResponse, InvalidCredentialsResponse, DeviceVerifyCooldownResponse, AuthCooldownResponse
@@ -89,8 +88,8 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
     else:
         current_ac_session = AccessSession(**ac_session_doc)
 
-    # Check if user should get a cooldown penalty
-    on_cooldown = current_ac_session.cooldown_expires_at > datetime.datetime.now()
+    # Check if session cooldown is expired
+    on_cooldown = current_ac_session.cooldown_expires_at > datetime.datetime.now(datetime.timezone.utc)
     if on_cooldown:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
             "msg": "Too many failed login attempts. Please wait before trying again.",
@@ -108,10 +107,9 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         # Add one attempt to the current access session
         current_ac_session.login_attempts += 1
 
-        # Checks and adds cooldown penalty if necassary
+        # Checks and adds cooldown penalty if necessary
         if current_ac_session.login_attempts >= MAX_ATTEMPTS_BEFORE_COOLDOWN and current_ac_session.login_attempts < MAX_ATTEMPTS_BEFORE_BLACKLIST:
-            current_ac_session.cooldown_expires_at = datetime.datetime.now(
-            ) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
+            current_ac_session.cooldown_expires_at = datetime.datetime.now(datetime.timezone.utc) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
             current_ac_session.save()
 
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
@@ -126,13 +124,13 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
                 # User have gone above max attempts but is on the whitelist.
                 # We don't wanna permanently block them out of their account so
                 # we just give them an extra try and add cd.
-                current_ac_session.cooldown_expires_at = datetime.datetime.now(
+                current_ac_session.cooldown_expires_at = datetime.datetime.utcnow(
                 ) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
                 current_ac_session.login_attempts -= 1
                 current_ac_session.save()
 
                 logger.info(
-                    f"[{datetime.datetime.now()}] Failed login attempt from ip: {req_ip_address}")
+                    f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
                 raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
                     "msg": "Too many failed login attempts. Please wait before trying again.",
                     "cooldown_expires_at": str(current_ac_session.cooldown_expires_at)
@@ -142,7 +140,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
                     Device(ip_address=req_ip_address))
 
                 logger.info(
-                    f"[{datetime.datetime.now()}] Failed login attempt from ip: {req_ip_address}")
+                    f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
                     "msg": "Invalid credentials. Too many attempts, your device has been blacklisted",
                     "attempts_left": 0
@@ -152,7 +150,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         current_ac_session.save()
 
         logger.info(
-            f"[{datetime.datetime.now()}] Failed login attempt from ip: {req_ip_address}")
+            f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
             "msg": "Invalid credentials",
             "attempts_left": MAX_ATTEMPTS_BEFORE_BLACKLIST - current_ac_session.login_attempts
@@ -168,7 +166,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         SMS_COOLDOWN = datetime.timedelta(minutes=2)
 
         # Check if user is still on cooldown
-        sms_on_cooldown = current_ac_session.sms_cooldown_expires_at > datetime.datetime.now()
+        sms_on_cooldown = current_ac_session.sms_cooldown_expires_at > datetime.datetime.now(datetime.timezone.utc)
         if sms_on_cooldown:
             raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail={
                 "msg": "There's recently been attempted an login from your device",
@@ -185,7 +183,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         )
 
         # Sets a cooldown timer for sending an SMS to the user
-        current_ac_session.sms_cooldown_expires_at = datetime.datetime.now() + SMS_COOLDOWN
+        current_ac_session.sms_cooldown_expires_at = datetime.datetime.now(datetime.timezone.utc) + SMS_COOLDOWN
         current_ac_session.save()
 
         raise HTTPException(status_code=status.HTTP_307_TEMPORARY_REDIRECT, detail={
@@ -236,7 +234,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # If 60 seconds have passed allow creation of new registration session
     if existing_session:
         current_session = BikeOwnerRegistrationSession(**existing_session)
-        time_delta = datetime.datetime.now() - current_session.created_at
+        time_delta = datetime.datetime.now(datetime.timezone.utc) - current_session.created_at
         if (time_delta.seconds < 300):
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail={
                 "msg": f"You already have an active registration session. Please wait {300 - time_delta.seconds} seconds before trying again",
@@ -302,7 +300,7 @@ def request_password_reset(request: Request, phone_number: str = Depends(sanitiz
 
     if existing_session:
         current_session = ResetPasswordSession(**existing_session)
-        sms_on_cooldown = current_session.expires_at > datetime.datetime.now()
+        sms_on_cooldown = current_session.expires_at > datetime.datetime.now(datetime.timezone.utc)
         if sms_on_cooldown:
             raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail={
                 "msg": "There's recently been requested a reset password attempt",

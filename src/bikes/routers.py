@@ -70,7 +70,7 @@ def found_bike_report(
     bike_owner: uuid.UUID = Form(...),
     frame_number: str = Form(...),
     address: str = Form(...),
-    comment: str = Form(...),
+    comment: str = Form(default=None),
     image: UploadFile = File(default=None),
 
 ) -> FoundBikeReport:
@@ -120,10 +120,8 @@ def register_bike(
     bike.image.upload_and_set(image)
     bike.receipt.upload_and_set(receipt)
 
-    send_sms(
-        msg=f"Hej !\nDin kode til at indløse cyklen i minCykel app'en er: \n\n{str(bike.claim_token)}",
-        to=phone_number.replace(' ', '')
-    )
+    send_sms(msg=f"Tak for at have registreret din cykel !\nBrug den efterfølgende kode til at indløse din cykel i appen", to=phone_number.replace(' ', ''))
+    send_sms(msg=str(bike.claim_token), to=phone_number.replace(' ', ''))
 
     return bike.save()
 
@@ -147,7 +145,7 @@ def claim_bike(request: Request, claim_token: uuid.UUID, user: BikeOwner = Depen
     # This hands over the ownership to the sender of the request
     bike.owner = user.id
     bike.state = BikeState.TRANSFERABLE
-    bike.claimed_date = datetime.datetime.now()
+    bike.claimed_date = datetime.datetime.now(datetime.timezone.utc)
     bike.save()
 
     return bike

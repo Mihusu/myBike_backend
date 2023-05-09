@@ -25,8 +25,8 @@ class AccessSession(Entity):
     phone_number: str       # Phone number of owner trying to access
     login_attempts: int = 0
     otp: str = Field(default_factory=generate_otp)
-    cooldown_expires_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
-    sms_cooldown_expires_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+    cooldown_expires_at: datetime.datetime = Field(default_factory= lambda : datetime.datetime.now(datetime.timezone.utc))
+    sms_cooldown_expires_at: datetime.datetime = Field(default_factory= lambda : datetime.datetime.now(datetime.timezone.utc))
     #last_login_attempt_at: datetime
 
 

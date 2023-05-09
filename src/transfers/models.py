@@ -20,6 +20,6 @@ class BikeTransfer(Entity):
     sender: uuid.UUID
     receiver: uuid.UUID
     bike_id: uuid.UUID
-    created_at: datetime.datetime = datetime.datetime.now()
+    created_at: datetime.datetime = Field(default_factory= lambda : datetime.datetime.now(datetime.timezone.utc))
     closed_at: datetime.datetime = None
     state: BikeTransferState = BikeTransferState.PENDING

@@ -1,5 +1,11 @@
 # MinCykel Backend
 
+This is the backend application for mincykelapp.dk.
+
+It can be found deployed at: https://api.mincykelapp.dk
+
+Logo hopefully comming soon ...
+
 ## 1. Install and running project
 
 
@@ -60,46 +66,55 @@ It is mandatory to install Python version 3.11 or above to get accurate type-hin
 
 Commit code to the development branch
 
-# Docker deployment
+# Deployment to production
 
-### Step 1. Create and upload docker image
+## Prerequisites
+
+* Have docker installed
+* Logged into docker with docker login
+
+The login credentials for docker can be found on the discord server
+
+### Step 1. Build and push the docker image
 
 First, build the image with the following command:
 ```console
-docker build -t jsaad20/production:latest .
+docker build -t jsaad20/production:backend .
 ```
 
-This will create a docker image.
-Next we push this image to docker hub so we can later pull down the image
+Next we push this image to docker hub
 from claaudia.
 ```console
-docker push jsaad20/production:latest
+docker push jsaad20/production:backend
 ```
 
-### Step 2. Login and pull docker image from claaudia server
+### Thats it 🚀
+
+The server is setup to automatically listen to new image pushes so everything should be updated on the server
+
+
+# Advanced server notes
+### Login and pull docker image from claaudia server
+
+Ssh into the backend server with the following command:
 ```console
-$ sudo docker pull jsaad20/production:latest
+$ sudo ssh ubuntu@130.225.39.185 -i secret.pem 
+```
+secret.pem file can be found on discord server
+
+Pull down the image from docker hub
+```console
+$ sudo docker pull jsaad20/production:backend
 ```
 
 If the container have not been started on the server (it should always be running), it can be started with the following command:
 ```console
-sudo docker-compose -f docker-compose.yml up -d
+sudo docker-compose -f docker-compose.backend.yml up -d
 ```
 
 To run traefik run:
 ```console
 sudo docker-compose -f docker-compose.traefik.yml up -d
-```
-
-Now we use docker run with watchtower to startup the application
-while watchtower listens for updates to the base image to automatically apply changes
-```console
-sudo docker run -ti -d \
-  --name watchtower \
-  -e REPO_USER=jsaad20 \
-  -e REPO_PASS=weZcom-jenve0-pozpyr \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  containrrr/watchtower backend.prod --interval 30
 ```
 
 

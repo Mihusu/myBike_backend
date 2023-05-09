@@ -25,7 +25,7 @@ class Verify2FASession:
             raise HTTPException(
                 status_code=403, detail=f"Verifying wrong kind of session. Verifying session with name '{self.name}' but got session '{session_doc['name']}'")
             
-        if datetime.datetime.now() > session_doc['expires_at']:
+        if datetime.datetime.now(datetime.timezone.utc) > session_doc['expires_at']:
             raise HTTPException(
                 status_code=410, detail=f"Session expired at: {session_doc['expires_at']}")
 
@@ -58,7 +58,7 @@ def phone_number_not_registered(request: Request, phone_number: str = Depends(sa
     """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
-        raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phone number '{phone_number}'")
+        raise HTTPException(status_code=400, detail=f"There already exists a bike owner with given phone number '{phone_number}'")
     
     return phone_number
 
