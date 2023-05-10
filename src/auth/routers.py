@@ -122,7 +122,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
 
             if owner.devices.is_known(req_ip_address):
                 # User have gone above max attempts but is on the whitelist.
-                # We don't wanna permanently block them out of their account so
+                # We don't want to permanently block them out of their account so
                 # we just give them an extra try and add cd.
                 current_ac_session.cooldown_expires_at = datetime.datetime.utcnow(
                 ) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
