@@ -68,13 +68,17 @@ def strong_password(password: str = Body()):
     
     Current requirements for strong password is:
         * A minimum of 12 characters
+        * A maximum of 64 characters
         
-    Last changed: apr.12.2023 - jsaad
+    Last changed:    may.10.2023 - jsaad
     """
     MIN_PASSWORD_LEN = 12
+    MAX_PASSWORD_LEN = 64
     
-    if not len(password) >= MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain 12 characters or above")
+    if len(password) < MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain atleast 12 characters")
+    if len(password) > MAX_PASSWORD_LEN:
+        raise HTTPException(status_code=406, detail=f"Lengthy password. Password must contain at most 64 characters")
     
     return password
 

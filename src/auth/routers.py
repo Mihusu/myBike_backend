@@ -336,8 +336,7 @@ def verify_password_reset(request: Request, session=Depends(Verify2FASession('pa
 @router.put('/reset-password/confirm', summary="Changes an accounts password", status_code=200)
 def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), password: str = Depends(strong_password)):
 
-    session_doc = request.app.collections['2fa_sessions'].find_one({
-                                                                   '_id': session_id})
+    session_doc = request.app.collections['2fa_sessions'].find_one({'_id': session_id})
     if not session_doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Session '{session_id}' not found")
