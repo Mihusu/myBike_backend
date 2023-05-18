@@ -1,3 +1,4 @@
+import logging
 import uuid
 import datetime
 from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
@@ -162,6 +163,8 @@ def accept_transfer(
     transfer.closed_at = datetime.datetime.now(datetime.timezone.utc)
 
     bike.save()
+
+    logging.warning("Bike transferred")
 
     return transfer.save()
 

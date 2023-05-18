@@ -19,12 +19,13 @@ class Bcolors:
     UNDERLINE = '\033[4m'
     
     
-if os.getenv('ENV') == 'prod':
+#if os.getenv('ENV') == 'prod':
+if True:
     print(f"{Bcolors.OKBLUE}[Log]:{Bcolors.ENDC}    production")
     # All of this is already happening by default!
     sentry_logging = LoggingIntegration(
-        level=logging.INFO,        # Capture info and above as breadcrumbs
-        event_level=logging.ERROR  # Send errors as events
+        level=logging.INFO,        
+        event_level=logging.WARNING   
     )
 
     sentry_sdk.init(

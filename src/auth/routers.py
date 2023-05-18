@@ -112,6 +112,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
             current_ac_session.cooldown_expires_at = datetime.datetime.now(datetime.timezone.utc) + COOLDOWN_DURATIONS[current_ac_session.login_attempts]
             current_ac_session.save()
 
+            logger.warning("Failed login attempt")
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
                 "msg": "Too many failed login attempts. Please wait before trying again.",
                 "cooldown_expires_at": str(current_ac_session.cooldown_expires_at)
@@ -129,8 +130,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
                 current_ac_session.login_attempts -= 1
                 current_ac_session.save()
 
-                logger.info(
-                    f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
+                logger.warning("Failed login attempt")
                 raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
                     "msg": "Too many failed login attempts. Please wait before trying again.",
                     "cooldown_expires_at": str(current_ac_session.cooldown_expires_at)
@@ -139,8 +139,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
                 owner.devices.black_list.append(
                     Device(ip_address=req_ip_address))
 
-                logger.info(
-                    f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
+                logger.warning("Failed login attempt. Device blacklisted")
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
                     "msg": "Invalid credentials. Too many attempts, your device has been blacklisted",
                     "attempts_left": 0
@@ -149,8 +148,7 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         # Save modifications
         current_ac_session.save()
 
-        logger.info(
-            f"[{datetime.datetime.now(datetime.timezone.utc)}] Failed login attempt from ip: {req_ip_address}")
+        logger.warning("Failed login attempt")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
             "msg": "Invalid credentials",
             "attempts_left": MAX_ATTEMPTS_BEFORE_BLACKLIST - current_ac_session.login_attempts
@@ -186,12 +184,14 @@ async def authenticate(request: Request, phone_number: str = Body(), password: s
         current_ac_session.sms_cooldown_expires_at = datetime.datetime.now(datetime.timezone.utc) + SMS_COOLDOWN
         current_ac_session.save()
 
+        logger.warning("Successful login. Device needs to be trusted")
         raise HTTPException(status_code=status.HTTP_307_TEMPORARY_REDIRECT, detail={
             "msg": "Password attempt from unknown device. Please verify device",
             "session_id": str(session.id)
         })
 
     # Device is whitelisted and password is correct
+    logger.warning("Successful login")
     return {
         "access_token": Authorize.create_access_token(subject=str(owner_doc['_id'])),
         "refresh_token": Authorize.create_refresh_token(subject=str(owner_doc['_id']))
@@ -218,8 +218,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # 1. Check that phone number does not already exists
     # 1.25 Validate password against OWASP standards
     # 1.5 Hash and salt password
-    hashed_password = bcrypt.hashpw(
-        password.encode(encoding="utf-8"), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(password.encode(encoding="utf-8"), bcrypt.gensalt())
 
     # 1.75 Check whether a session for phone number and ip already exists
     request_ip = request.client.host
@@ -278,7 +277,7 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
     # Maybe remove the session as the registration was successful? Implemented
     request.app.collections['2fa_sessions'].delete_one({'_id': session.id})
     
-
+    logger.warning("New user registered")
     Authorize = AuthJWT()
     return {
         "access_token": Authorize.create_access_token(subject=str(bike_owner.id)),

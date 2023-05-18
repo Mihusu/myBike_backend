@@ -1,4 +1,5 @@
 import datetime
+import logging
 import uuid
 from fastapi import APIRouter, Depends, Form, Path, Request, Response, HTTPException, UploadFile, File, status
 from src.auth.dependencies import authenticated_request
@@ -27,19 +28,6 @@ def get_my_bikes(request: Request, user: BikeOwner = Depends(authenticated_reque
     ))
     return bikes
 
-
-# @router.get(
-#     '/{id}',
-#     description="Get a single bike by id",
-#     status_code=status.HTTP_200_OK
-# )
-# def get_bike_by_id(id: uuid.UUID, request: Request) -> Bike:
-#     bike = request.app.collections["bikes"].find_one({"_id": id})
-#     if bike is None:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-#                             detail=f"Bike with ID {id} not found")
-
-#     return bike
 
 @router.get(
     '/{frame_number}',
@@ -72,10 +60,8 @@ def found_bike_report(
     address: str = Form(...),
     comment: str = Form(default=None),
     image: UploadFile = File(default=None),
-
 ) -> FoundBikeReport:
 
- # Need to transfer all Form fields to
     bikeIncident = FoundBikeReport(
         bike_owner=bike_owner,
         address=address,
@@ -123,6 +109,7 @@ def register_bike(
     send_sms(msg=f"Tak for at have registreret din cykel !\nBrug den efterfølgende kode til at indløse din cykel i appen", to=phone_number.replace(' ', ''))
     send_sms(msg=str(bike.claim_token), to=phone_number.replace(' ', ''))
 
+    logging.warning("New bike registered")
     return bike.save()
 
 @router.post("/claim/{claim_token}", description="Claim a new bike")
