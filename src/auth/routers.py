@@ -230,7 +230,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # print(now)
 
     # If a session is found, check time since creation to prevent SMS spam to phone number
-    # If 60 seconds have passed allow creation of new registration session
+    # If 300 seconds have passed allow creation of new registration session
     if existing_session:
         current_session = BikeOwnerRegistrationSession(**existing_session)
         time_delta = datetime.datetime.now(datetime.timezone.utc) - current_session.created_at
@@ -242,7 +242,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
         else:
             print(f"td seconds is {time_delta.seconds}, cooldown is over. Permission granted")
 
-    # 2. Create and save new BikeOwnerSession object
+    # 2. Create and save a new BikeOwnerSession object
     session = BikeOwnerRegistrationSession(
         name='bikeowner-registration', phone_number=phone_number, hash=hashed_password, request_ip_address=request_ip)
     session.save()
@@ -274,7 +274,7 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
 
     bike_owner.save()
 
-    # Maybe remove the session as the registration was successful? Implemented
+    # Removes the session as the registration was successful
     request.app.collections['2fa_sessions'].delete_one({'_id': session.id})
     
     logger.warning("New user registered")

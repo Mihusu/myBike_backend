@@ -5,7 +5,10 @@ def frame_number_not_registered(request: Request, frame_number: str = Form(...))
     """Checks that the frame number is not already in the database"""
     bike = request.app.collections['bikes'].find_one({'frame_number': frame_number.lower()})
     if bike:
-        raise HTTPException(status_code=400, detail=f"Bike with frame number '{frame_number}' is already registered")
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail={
+            "msg": "Bike with frame number '{frame_number}' is already registered",
+            "frame_number": frame_number
+        })
 
 def valid_frame_number(frame_number: str = Form(...)):
     """ Validates the frame number according to the danish frame number format
@@ -22,7 +25,7 @@ def valid_frame_number(frame_number: str = Form(...)):
     if valid:
         return frame_number
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"Invalid frame number. See https://da.wikipedia.org/wiki/Det_danske_stelnummersystem_for_cykler for valid frame numbers")
 
 def valid_danish_phone_number(phone_number: str = Form(...)):
     trimmed = phone_number.replace(' ', '')
