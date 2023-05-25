@@ -1,3 +1,4 @@
+import logging
 import uuid
 import datetime
 from fastapi import APIRouter, Body, Depends, Request, HTTPException, status
@@ -163,6 +164,8 @@ def accept_transfer(
 
     bike.save()
 
+    logging.warning("Bike transferred")
+
     return transfer.save()
 
 @router.put('/{transfer_id}/reject', description="Rejects a bike transfer", status_code=status.HTTP_202_ACCEPTED)
@@ -177,7 +180,7 @@ def reject_transfer(
     transfer = BikeTransfer(**transfer_in_db)
 
     # Checks if the requester is also the receiver in a transfer
-    if not requester.id == transfer.receiver:
+    if not requester.id == transfer.receiver:   
         raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail=f"Requester does not match transfer recipient")
     
     # Get bike
@@ -188,7 +191,7 @@ def reject_transfer(
     if not bike.state == BikeState.IN_TRANSFER or not transfer.state == BikeTransferState.PENDING:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bike not in transfer or transfer not pending")
     
-    # This does not hand over the ownership to the sender of the request
+    # This does not hand over the ownership to the receiver of the request
     bike.state = BikeState.TRANSFERABLE
     transfer.state = BikeTransferState.DECLINED
     transfer.closed_at = datetime.datetime.now(datetime.timezone.utc)

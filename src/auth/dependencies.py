@@ -58,7 +58,7 @@ def phone_number_not_registered(request: Request, phone_number: str = Depends(sa
     """Check that given phone number does not already exist in the database"""
     bike_owner = request.app.collections['bike_owners'].find_one({'phone_number': phone_number})
     if bike_owner:
-        raise HTTPException(status_code=400, detail=f"There already exist a bike owner with given phone number '{phone_number}'")
+        raise HTTPException(status_code=400, detail=f"There already exists a bike owner with given phone number '{phone_number}'")
     
     return phone_number
 
@@ -68,13 +68,17 @@ def strong_password(password: str = Body()):
     
     Current requirements for strong password is:
         * A minimum of 12 characters
+        * A maximum of 64 characters
         
-    Last changed: apr.12.2023 - jsaad
+    Last changed:    may.10.2023 - jsaad
     """
     MIN_PASSWORD_LEN = 12
+    MAX_PASSWORD_LEN = 64
     
-    if not len(password) >= MIN_PASSWORD_LEN:
-        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain 12 characters or above")
+    if len(password) < MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=406, detail=f"Weak password. Password must contain atleast 12 characters")
+    if len(password) > MAX_PASSWORD_LEN:
+        raise HTTPException(status_code=406, detail=f"Lengthy password. Password must contain at most 64 characters")
     
     return password
 
