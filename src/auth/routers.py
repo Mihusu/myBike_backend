@@ -220,7 +220,7 @@ def register_bike_owner(request: Request, phone_number: str = Depends(phone_numb
     # 1.25 Validate password against OWASP standards
     # 1.5 Hash and salt password
     hashed_password = bcrypt.hashpw(
-        password.encode(encoding="utf-8"), bcrypt.gensalt())
+        password.encode(encoding="utf-8"), bcrypt.gensalt(rounds=13))
 
     # 1.75 Check whether a session for phone number and ip already exists
     request_ip = request.client.host
@@ -278,7 +278,6 @@ def verify_bikeowner_registration(request: Request, session=Depends(Verify2FASes
 
     # Maybe remove the session as the registration was successful? Implemented
     request.app.collections['2fa_sessions'].delete_one({'_id': session.id})
-    
 
     Authorize = AuthJWT()
     return {
@@ -354,7 +353,7 @@ def confirm_password_reset(request: Request, session_id: uuid.UUID = Body(), pas
 
     owner = BikeOwner(**owner_doc)
     owner.hash = bcrypt.hashpw(password.encode(
-        encoding="utf-8"), bcrypt.gensalt())
+        encoding="utf-8"), bcrypt.gensalt(rounds=13))
     owner.save()
 
     send_sms(msg="Din adgangskode er blevet nulstillet",

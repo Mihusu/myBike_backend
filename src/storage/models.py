@@ -23,11 +23,11 @@ class S3File(BaseModel):
     _allowed_content_types   : list[str]     # Ex. ['image/png', 'application/pdf'] etc
     _max_size                : int | None    # Optional max size of file in bytes
 
-    content_type            : str | None
-    size                    : int | None
-    filename                : str | None
-    obj_name                : str | None    # Name of the full path in s3. Should not be set directly !
-    obj_url                 : str | None    
+    content_type             : str | None
+    size                     : int | None
+    filename                 : str | None
+    obj_name                 : str | None    # Name of the full path in s3. Should not be set directly !
+    obj_url                  : str | None    
 
     @classmethod
     def field(cls, path: str, allowed_content_types: list[str], max_size: int | None = None) -> Self:

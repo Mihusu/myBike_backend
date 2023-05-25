@@ -68,10 +68,8 @@ class Bike(Entity):
     kind: BikeKind
     brand: str                          # Should probably be a model but is fine for now
     color: BikeColor
-    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=[
-                                        'image/png', 'image/jpeg', 'image/jpg'], max_size=10_000_000)
-    receipt: S3File | None = S3File.field(
-        path='bike-receipts', allowed_content_types=['*'], max_size=10_000_000)
+    image: S3File | None = S3File.field(path='bike-images', allowed_content_types=['image/png', 'image/jpeg', 'image/jpg'], max_size=10_000_000)
+    receipt: S3File | None = S3File.field(path='bike-receipts', allowed_content_types=['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'], max_size=10_000_000)
     reported_stolen: bool = False
     claim_token: uuid.UUID = Field(default_factory=uuid.uuid4)
     claimed_date: datetime.datetime | None
