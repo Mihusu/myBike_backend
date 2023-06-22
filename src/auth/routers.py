@@ -41,7 +41,6 @@ def get_config():
     '425': {'model': DeviceVerifyCooldownResponse, 'description': "Device risks processing a request that might be replayed"},
     '429': {'model': AuthCooldownResponse, 'description': "Cooldown because of too many failed attempts"}
 })
-
 async def authenticate(request: Request, phone_number: str = Body(), password: str = Body(), Authorize: AuthJWT = Depends()):
 
     req_ip_address = request.client.host
