@@ -2,9 +2,9 @@
 
 This is the backend application for mincykelapp.dk.
 
-It can be found deployed at: https://api.mincykelapp.dk
+The Frontend repository can be found at https://github.com/Mihusu/Portfolio-Frontend
 
-Logo hopefully comming soon ...
+It can be found deployed at: https://api.mincykelapp.dk
 
 ## 1. Install and running project
 
